@@ -1,4 +1,3 @@
-// src/app/api/auth/[...nextauth]/route.ts
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
@@ -13,13 +12,11 @@ export const authOptions: NextAuthOptions = {
   ],
   adapter: MongoDBAdapter(clientPromise),
   secret: process.env.NEXTAUTH_SECRET,
-  session: {
-    strategy: "jwt" as const,
+  session: { strategy: "jwt" },
+  pages: {
+    error: "/auth/error", // optional: custom error page
   },
 };
 
 const handler = NextAuth(authOptions);
-
-// App Router ke liye fix:
-// GET aur POST dono export karo
 export { handler as GET, handler as POST };

@@ -1,43 +1,48 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import Navigation from "@/components/Navigation";
+import { useRouter } from "next/navigation";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Send, ChefHat, User, Loader2 } from "lucide-react";
+import { Send, ChefHat, User, Loader2, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+
+import Header from "@/components/Header";
 
 interface Message {
   id: string;
   type: "user" | "bot";
   content: string;
   timestamp: Date;
-  recipe?: any;
+  recipe?: Recipe;
+}
+
+interface Recipe {
+  title: string;
+  cookTime: string;
+  image?: string;
+  ingredients: string[];
+  instructions: string[];
 }
 
 const Chatbot = () => {
   const [user, setUser] = useState<any>(null);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (!userData) {
       toast.error("Please login to access the recipe generator!");
-      navigate("/login");
+      router.push("/recipe");
       return;
     }
     setUser(JSON.parse(userData));
-  }, [navigate]);
+  }, [router]);
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -51,93 +56,64 @@ const Chatbot = () => {
 
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const suggestions = [
-    "chicken breast",
-    "pasta",
-    "salmon",
-    "vegetarian meal",
-    "healthy dinner",
-    "quick snack",
-  ];
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const recipes: Record<string, Recipe> = {
+    chicken: {
+      title: "Herb-Crusted Chicken Breast",
+      cookTime: "30 minutes",
+      image: "/images/chicken.jpg",
+      ingredients: [
+        "2 chicken breasts",
+        "2 tbsp olive oil",
+        "1 tsp dried rosemary",
+        "1 lemon (juiced)",
+      ],
+      instructions: [
+        "Preheat oven to 375°F (190°C)",
+        "Rub chicken with olive oil, herbs, and lemon juice",
+        "Bake for 20–25 mins until golden and cooked through",
+      ],
+    },
+    pasta: {
+      title: "Creamy Garlic Parmesan Pasta",
+      cookTime: "20 minutes",
+      image: "/images/pasta.jpg",
+      ingredients: [
+        "1 lb pasta",
+        "1 cup heavy cream",
+        "1 cup Parmesan cheese",
+        "4 cloves garlic",
+      ],
+      instructions: [
+        "Cook pasta until al dente",
+        "Sauté garlic in butter, then add cream and cheese",
+        "Toss pasta in sauce until creamy and delicious",
+      ],
+    },
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const generateRecipeFromIngredients = (userInput: string) => {
-    const recipes = {
-      chicken: {
-        title: "Herb-Crusted Chicken Breast",
-        cookTime: "30 minutes",
-        ingredients: [
-          "2 chicken breasts",
-          "2 tbsp olive oil",
-          "1 tsp dried rosemary",
-          "1 lemon (juiced)",
-        ],
-        instructions: [
-          "Preheat oven to 375°F (190°C)",
-          "Rub chicken with olive oil, herbs, and lemon juice",
-          "Bake for 20–25 mins until golden and cooked through",
-        ],
-      },
-      pasta: {
-        title: "Creamy Garlic Parmesan Pasta",
-        cookTime: "20 minutes",
-        ingredients: [
-          "1 lb pasta",
-          "1 cup heavy cream",
-          "1 cup Parmesan cheese",
-          "4 cloves garlic",
-        ],
-        instructions: [
-          "Cook pasta until al dente",
-          "Sauté garlic in butter, then add cream and cheese",
-          "Toss pasta in sauce until creamy and delicious",
-        ],
-      },
-    };
-
-    const selectedRecipe = userInput.includes("chicken")
-      ? recipes.chicken
-      : recipes.pasta;
-
-    return {
-      recipe: selectedRecipe,
-      content: `Here’s your recipe for **${selectedRecipe.title}** 🍽️\n\n⏱️ ${
-        selectedRecipe.cookTime
-      }\n\n**Ingredients:**\n${selectedRecipe.ingredients
-        .map((i) => `• ${i}`)
-        .join("\n")}\n\n**Steps:**\n${selectedRecipe.instructions
-        .map((s, i) => `${i + 1}. ${s}`)
-        .join("\n")}`,
-    };
+  const generateRecipe = (userInput: string) => {
+    if (userInput.toLowerCase().includes("chicken")) return recipes.chicken;
+    if (userInput.toLowerCase().includes("pasta")) return recipes.pasta;
+    return recipes.chicken;
   };
 
-  const saveRecipeToHistory = (recipe: any, userInput: string) => {
+  const saveRecipeToHistory = (recipe: Recipe, userInput: string) => {
     const recipeWithId = {
       id: Date.now().toString(),
       ...recipe,
       timestamp: new Date().toISOString(),
       userInput,
     };
-
     const history = JSON.parse(localStorage.getItem("recipeHistory") || "[]");
     history.unshift(recipeWithId);
     if (history.length > 50) history.splice(50);
     localStorage.setItem("recipeHistory", JSON.stringify(history));
   };
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!inputValue.trim()) return;
-
     const userMessage: Message = {
       id: Date.now().toString(),
       type: "user",
@@ -147,45 +123,29 @@ const Chatbot = () => {
     setMessages((prev) => [...prev, userMessage]);
     const currentInput = inputValue;
     setInputValue("");
-    setShowSuggestions(false);
     setIsLoading(true);
 
     setTimeout(() => {
-      const { recipe, content } = generateRecipeFromIngredients(currentInput);
-      const botResponse: Message = {
+      const recipe = generateRecipe(currentInput);
+      const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: "bot",
-        content,
+        content: `Here’s your recipe for **${recipe.title}** 🍽️`,
         timestamp: new Date(),
         recipe,
       };
-      setMessages((prev) => [...prev, botResponse]);
-      setIsLoading(false);
+      setMessages((prev) => [...prev, botMessage]);
       saveRecipeToHistory(recipe, currentInput);
-      toast.success("✨ Recipe added to history!");
-    }, 1200);
+      toast.success("✨ Recipe saved to your history!");
+      setIsLoading(false);
+    }, 1000);
   };
-
-  const formatMessageContent = (content: string) =>
-    content.split("\n").map((line, i) => (
-      <p
-        key={i}
-        className={
-          line.startsWith("**")
-            ? "font-semibold text-orange-700"
-            : "text-gray-700"
-        }
-      >
-        {line}
-      </p>
-    ));
 
   if (!user) return <div>Loading...</div>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-100 to-yellow-50">
-      <Navigation />
-
+      <Header/>
       <div className="max-w-4xl mx-auto p-4">
         <Card className="overflow-hidden border-none shadow-xl backdrop-blur-md bg-white/70">
           <div className="bg-gradient-to-r from-orange-600 to-amber-500 text-white p-6">
@@ -198,7 +158,6 @@ const Chatbot = () => {
             </p>
           </div>
 
-          {/* Chat Section */}
           <div className="h-[420px] overflow-y-auto p-6 space-y-4">
             <AnimatePresence>
               {messages.map((msg) => (
@@ -217,31 +176,55 @@ const Chatbot = () => {
                       <ChefHat className="h-4 w-4 text-orange-600" />
                     </div>
                   )}
-                  <Card
-                    className={`max-w-[80%] p-3 ${
-                      msg.type === "user"
-                        ? "bg-orange-600 text-white rounded-br-none shadow-md"
-                        : "bg-white/70 backdrop-blur-sm border border-orange-100 shadow-md"
-                    }`}
-                  >
-                    <CardContent className="p-2">
-                      <div className="whitespace-pre-wrap">
-                        {formatMessageContent(msg.content)}
-                      </div>
-                      <div
-                        className={`text-xs mt-2 ${
-                          msg.type === "user"
-                            ? "text-orange-100"
-                            : "text-gray-500"
-                        }`}
+
+                  <div className="max-w-[80%] space-y-2">
+                    <Card
+                      className={`p-3 ${
+                        msg.type === "user"
+                          ? "bg-orange-600 text-white rounded-br-none shadow-md"
+                          : "bg-white/70 backdrop-blur-sm border border-orange-100 shadow-md"
+                      }`}
+                    >
+                      <CardContent className="p-2">
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      </CardContent>
+                    </Card>
+
+                    {/* Recipe Preview Card */}
+                    {msg.recipe && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
                       >
-                        {msg.timestamp.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
+                        <Card className="overflow-hidden border-orange-200 shadow-md hover:shadow-lg transition">
+                          <img
+                            src={msg.recipe.image}
+                            alt={msg.recipe.title}
+                            className="w-full h-40 object-cover"
+                          />
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-center">
+                              <h3 className="text-lg font-semibold text-orange-700">
+                                {msg.recipe.title}
+                              </h3>
+                              <div className="flex items-center gap-1 text-orange-600 text-sm">
+                                <Clock className="w-4 h-4" />{" "}
+                                {msg.recipe.cookTime}
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              className="mt-3 bg-orange-600 hover:bg-orange-700 transition"
+                            >
+                              View Full Recipe
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    )}
+                  </div>
+
                   {msg.type === "user" && (
                     <div className="w-9 h-9 bg-orange-200 rounded-full flex items-center justify-center">
                       <User className="h-4 w-4 text-orange-800" />
@@ -260,7 +243,6 @@ const Chatbot = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Suggestions */}
           <div className="px-6 py-4 border-t bg-orange-50/70 flex flex-wrap gap-2">
             {[
               "I have chicken",
@@ -278,7 +260,6 @@ const Chatbot = () => {
             ))}
           </div>
 
-          {/* Input */}
           <div className="p-4 border-t bg-white/60 backdrop-blur-sm">
             <div className="flex gap-3">
               <Input

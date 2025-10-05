@@ -4,6 +4,7 @@
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import { Sun, Moon, Bell } from "lucide-react";
+import Link from "next/link";
 
 interface Notification {
   id: number;
@@ -38,15 +39,18 @@ export default function Header() {
       <h1 className="text-xl font-bold text-primary-foreground">Cookaro 🍳</h1>
 
       <div className="flex items-center gap-4 relative">
+        <Link href="/">Home</Link>
+        <Link href="/about">About</Link>
+        <Link href="/contact">Contact</Link>
         {/* Dark/Light Toggle */}
         <button
           onClick={toggleDarkMode}
           className="p-2 rounded-full hover:bg-primary/10"
         >
           {darkMode ? (
-            <Sun className="h-5 w-5" />
+            <Sun className="h-5 w-5 cursor-pointer" />
           ) : (
-            <Moon className="h-5 w-5" />
+            <Moon className="h-5 w-5 cursor-pointer" />
           )}
         </button>
 
@@ -54,9 +58,9 @@ export default function Header() {
         <div className="relative">
           <button
             onClick={() => setNotifOpen(!notifOpen)}
-            className="p-2 rounded-full hover:bg-primary/10 relative"
+            className="p-2 rounded-full hover:bg-primary/10 relative cursor-pointer"
           >
-            <Bell className="h-5 w-5" />
+            <Bell className="h-5 w-5 cursor-pointer" />
             <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive"></span>
           </button>
 
@@ -104,10 +108,15 @@ export default function Header() {
           </button>
 
           {profileOpen && (
-            <div className="absolute right-0 mt-2 w-40 rounded-lg border border-border bg-card shadow-lg">
+            <div className="absolute right-0 mt-2 w-40 rounded-lg border border-border bg-card shadow-lg ">
+              <Link href="/history">
+                <button className="w-full px-4 py-2 text-left text-sm font-semibold cursor-pointer">
+                  History
+                </button>
+              </Link>
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
+                className="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-destructive/10 cursor-pointer"
               >
                 Log Out
               </button>

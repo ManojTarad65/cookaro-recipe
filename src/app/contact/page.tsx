@@ -1,13 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Mail, Phone, MapPin, Send } from "lucide-react";
+import { Mail, Phone, MapPin, Send, ChefHat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import Particles from "react-tsparticles";
 import { loadFull } from "tsparticles";
 import { useCallback } from "react";
+import { RiGithubLine } from "react-icons/ri";
+import { FaLinkedin } from "react-icons/fa";
 
 export default function Contact() {
   const particlesInit = useCallback(async (engine: any) => {
@@ -149,26 +151,33 @@ export default function Contact() {
       </motion.section>
 
       {/* Footer CTA */}
-      <motion.section
-        className="py-16 bg-gradient-to-r from-orange-600 to-amber-600 text-center text-white relative z-10"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-      >
-        <h2 className="text-3xl font-bold mb-4">
-          Let’s Create Something Great Together
-        </h2>
-        <p className="text-lg opacity-90 mb-6">
-          Collaborate with RecipeAI to shape the future of smart cooking.
-        </p>
-        <Button
-          variant="secondary"
-          size="lg"
-          className="px-8 py-3 text-lg hover:scale-105 transition-all"
-        >
-          Join Our Team
-        </Button>
-      </motion.section>
+      <footer className="bg-gray-900 text-white py-12 px-4">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <ChefHat className="h-6 w-6 text-orange-400" />
+            <span className="text-xl font-bold">COOKARO</span>
+          </div>
+          <p className="text-gray-400">
+            © 2025 COOKARO. All rights reserved. Made ❤️ by Manoj Tarad
+          </p>
+          <div className="flex items-center justify-center space-x-2 mt-4 gap-10">
+            <a
+              href="https://github.com/ManojTarad65"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <RiGithubLine className="h-6 w-6 text-orange-100" />
+            </a>
+            <a
+              href="https://linkedin.com/in/manoj-tarad-0b779625a"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FaLinkedin className="h-6 w-6 text-orange-100" />
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
