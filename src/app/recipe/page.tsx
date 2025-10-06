@@ -1,287 +1,951 @@
 
+
+
+
+// "use client";
+
+// import { useState, useRef, useEffect, useCallback } from "react";
+// import Image from "next/image";
+// import { motion, AnimatePresence } from "framer-motion";
+// import { Send, ChefHat, User, Loader2, X } from "lucide-react";
+// import { Card, CardContent } from "@/components/ui/card";
+// import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+// import { Badge } from "@/components/ui/badge";
+// import { toast } from "sonner";
+
+// /* ----------------------- Types ----------------------- */
+// interface Recipe {
+//   idMeal: string;
+//   title: string;
+//   image?: string;
+//   category?: string;
+//   area?: string;
+//   ingredients: string[];
+//   instructions: string[];
+//   cookTime?: string;
+// }
+
+// interface Message {
+//   id: string;
+//   type: "user" | "bot";
+//   content: string;
+//   recipes?: Recipe[];
+// }
+
+// /* ----------------------- Helpers ----------------------- */
+// const normalize = (s: string) =>
+//   s
+//     .toLowerCase()
+//     .replace(/[^\w\s]/g, " ")
+//     .split(/\s+/)
+//     .filter(Boolean)
+//     .join(" ")
+//     .trim();
+
+// const buildIngredientsFromMeal = (meal: any): string[] => {
+//   const ingredients: string[] = [];
+//   for (let i = 1; i <= 20; i++) {
+//     const ing = meal[`strIngredient${i}`];
+//     const measure = meal[`strMeasure${i}`] ?? "";
+//     if (ing && ing.trim())
+//       ingredients.push(`${ing.trim()}${measure ? ` — ${measure.trim()}` : ""}`);
+//   }
+//   return ingredients;
+// };
+
+// const splitInstructions = (text?: string): string[] => {
+//   if (!text) return [];
+//   return text
+//     .split(/\r\n|\n{1,}|\.\s+/)
+//     .map((p) => p.trim())
+//     .filter(Boolean);
+// };
+
+// /* ----------------------- API Search Functions ----------------------- */
+// const searchByName = async (q: string, topN = 3): Promise<Recipe[]> => {
+//   try {
+//     const res = await fetch(
+//       `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(
+//         q
+//       )}`
+//     );
+//     const data = await res.json();
+//     const meals = data?.meals ?? [];
+//     return meals.slice(0, topN).map((meal: any) => ({
+//       idMeal: meal.idMeal,
+//       title: meal.strMeal,
+//       image: meal.strMealThumb,
+//       category: meal.strCategory,
+//       area: meal.strArea,
+//       ingredients: buildIngredientsFromMeal(meal),
+//       instructions: splitInstructions(meal.strInstructions),
+//       cookTime: "30-45 mins",
+//     }));
+//   } catch {
+//     return [];
+//   }
+// };
+
+// const searchByIngredients = async (
+//   ingredients: string[],
+//   topN = 3
+// ): Promise<Recipe[]> => {
+//   try {
+//     const normalized = ingredients.map((i) => normalize(i));
+//     const matchCounts: Record<string, number> = {};
+//     const mealMeta: Record<string, { strMeal: string; strMealThumb: string }> =
+//       {};
+
+//     await Promise.all(
+//       normalized.map(async (ing) => {
+//         if (!ing) return;
+//         try {
+//           const res = await fetch(
+//             `https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(
+//               ing
+//             )}`
+//           );
+//           const data = await res.json();
+//           const meals = data?.meals ?? [];
+//           meals.forEach((m: any) => {
+//             const id = m.idMeal;
+//             matchCounts[id] = (matchCounts[id] || 0) + 1;
+//             if (!mealMeta[id])
+//               mealMeta[id] = {
+//                 strMeal: m.strMeal,
+//                 strMealThumb: m.strMealThumb,
+//               };
+//           });
+//         } catch {}
+//       })
+//     );
+
+//     if (Object.keys(matchCounts).length === 0) return [];
+
+//     const sortedIds = Object.entries(matchCounts)
+//       .map(([id, count]) => ({ id, count }))
+//       .sort((a, b) => b.count - a.count)
+//       .slice(0, topN * 3);
+
+//     const details = (
+//       await Promise.all(
+//         sortedIds.map(async ({ id }) => {
+//           try {
+//             const res = await fetch(
+//               `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`
+//             );
+//             const data = await res.json();
+//             return data?.meals?.[0] ?? null;
+//           } catch {
+//             return null;
+//           }
+//         })
+//       )
+//     ).filter(Boolean);
+
+//     const results: { recipe: Recipe; matchCount: number }[] = details.map(
+//       (meal: any) => {
+//         const mealIngredients = Array.from({ length: 20 }, (_, i) =>
+//           (meal[`strIngredient${i + 1}`] || "").toLowerCase().trim()
+//         ).filter(Boolean);
+//         const matchCount = normalized.filter((ing) =>
+//           mealIngredients.some((m) => m.includes(ing) || ing.includes(m))
+//         ).length;
+//         return {
+//           recipe: {
+//             idMeal: meal.idMeal,
+//             title: meal.strMeal,
+//             image: meal.strMealThumb,
+//             category: meal.strCategory,
+//             area: meal.strArea,
+//             ingredients: buildIngredientsFromMeal(meal),
+//             instructions: splitInstructions(meal.strInstructions),
+//             cookTime: "30-45 mins",
+//           },
+//           matchCount,
+//         };
+//       }
+//     );
+
+//     results.sort((a, b) => b.matchCount - a.matchCount);
+//     return results.slice(0, topN).map((r) => r.recipe);
+//   } catch {
+//     return [];
+//   }
+// };
+
+// const searchByCategory = async (
+//   category: string,
+//   topN = 3
+// ): Promise<Recipe[]> => {
+//   try {
+//     const res = await fetch(
+//       `https://www.themealdb.com/api/json/v1/1/filter.php?c=${encodeURIComponent(
+//         category
+//       )}`
+//     );
+//     const meals = res ? (await res.json())?.meals ?? [] : [];
+//     const details = (
+//       await Promise.all(
+//         meals.slice(0, topN * 2).map(async (m: any) => {
+//           try {
+//             const r = await fetch(
+//               `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${m.idMeal}`
+//             );
+//             const d = await r.json();
+//             return d?.meals?.[0] ?? null;
+//           } catch {
+//             return null;
+//           }
+//         })
+//       )
+//     ).filter(Boolean);
+//     return details.slice(0, topN).map((meal: any) => ({
+//       idMeal: meal.idMeal,
+//       title: meal.strMeal,
+//       image: meal.strMealThumb,
+//       category: meal.strCategory,
+//       area: meal.strArea,
+//       ingredients: buildIngredientsFromMeal(meal),
+//       instructions: splitInstructions(meal.strInstructions),
+//       cookTime: "30-45 mins",
+//     }));
+//   } catch {
+//     return [];
+//   }
+// };
+
+// /* ----------------------- Component ----------------------- */
+// export default function ChatbotPage() {
+//   const [messages, setMessages] = useState<Message[]>([
+//     {
+//       id: "welcome",
+//       type: "bot",
+//       content:
+//         "👋 Hey! Enter ingredients, dish names or categories (comma separated) and I'll find recipes for you.",
+//     },
+//   ]);
+//   const [inputValue, setInputValue] = useState("");
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+//   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+//   useEffect(() => {
+//     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+//   }, [messages]);
+
+//   const categoryMap: Record<string, string> = {
+//     vegetarian: "Vegetarian",
+//     vegan: "Vegan",
+//     seafood: "Seafood",
+//     chicken: "Chicken",
+//     beef: "Beef",
+//     dessert: "Dessert",
+//     pasta: "Pasta",
+//   };
+
+//   const handleSend = useCallback(async () => {
+//     const raw = inputValue.trim();
+//     if (!raw) return;
+
+//     setMessages((prev) => [
+//       ...prev,
+//       { id: `${Date.now()}-u`, type: "user", content: raw },
+//     ]);
+//     setInputValue("");
+//     setIsLoading(true);
+
+//     const queries = raw
+//       .split(",")
+//       .map((q) => q.trim())
+//       .filter(Boolean);
+
+//     for (const query of queries) {
+//       let recipes: Recipe[] = [];
+//       const lower = query.toLowerCase();
+
+//       // Check category
+//       let matchedCategory = "";
+//       for (const key of Object.keys(categoryMap))
+//         if (lower.includes(key)) {
+//           matchedCategory = categoryMap[key];
+//           break;
+//         }
+
+//       if (matchedCategory) recipes = await searchByCategory(matchedCategory, 3);
+
+//       // If ingredients
+//       if (recipes.length === 0) {
+//         const tokens = query.split(/\s+/).filter(Boolean);
+//         if (tokens.length >= 1)
+//           recipes = await searchByIngredients(tokens.slice(0, 5), 3);
+//       }
+
+//       // Fallback: search by name
+//       if (recipes.length === 0) recipes = await searchByName(query, 3);
+
+//       // Push bot message
+//       setMessages((prev) => [
+//         ...prev,
+//         {
+//           id: `${Date.now()}-b`,
+//           type: "bot",
+//           content: recipes.length
+//             ? `Top ${recipes.length} recipes for "${query}"`
+//             : `No recipes found for "${query}" 😢`,
+//           recipes,
+//         },
+//       ]);
+//     }
+
+//     setIsLoading(false);
+//   }, [inputValue]);
+
+//   return (
+//     <div className="max-w-4xl mx-auto p-4 flex flex-col h-[90vh]">
+//       <div className="flex-1 overflow-y-auto mb-4">
+//         <AnimatePresence>
+//           {messages.map((msg) => (
+//             <motion.div
+//               key={msg.id}
+//               initial={{ opacity: 0, y: 10 }}
+//               animate={{ opacity: 1, y: 0 }}
+//               exit={{ opacity: 0 }}
+//               className={`flex ${
+//                 msg.type === "user" ? "justify-end" : "justify-start"
+//               } mb-3`}
+//             >
+//               <Card className="max-w-[75%] p-3">
+//                 <CardContent>
+//                   {msg.type === "bot" && (
+//                     <ChefHat className="w-5 h-5 mb-1 text-green-600" />
+//                   )}
+//                   <p>{msg.content}</p>
+//                   {msg.recipes &&
+//                     msg.recipes.map((r) => (
+//                       <div
+//                         key={r.idMeal}
+//                         className="mt-2 border rounded-lg p-2 cursor-pointer hover:bg-gray-100"
+//                         onClick={() => setSelectedRecipe(r)}
+//                       >
+//                         <div className="flex items-center gap-2">
+//                           {r.image && (
+//                             <Image
+//                               src={r.image}
+//                               alt={r.title}
+//                               width={60}
+//                               height={60}
+//                               className="rounded-md object-cover"
+//                             />
+//                           )}
+//                           <div>
+//                             <p className="font-semibold">{r.title}</p>
+//                             <p className="text-sm text-gray-500">
+//                               {r.category}
+//                             </p>
+//                           </div>
+//                         </div>
+//                       </div>
+//                     ))}
+//                 </CardContent>
+//               </Card>
+//             </motion.div>
+//           ))}
+//         </AnimatePresence>
+//         <div ref={messagesEndRef} />
+//       </div>
+
+//       <div className="flex gap-2">
+//         <Input
+//           placeholder="Type ingredients, dishes or categories..."
+//           value={inputValue}
+//           onChange={(e) => setInputValue(e.target.value)}
+//           onKeyDown={(e) => e.key === "Enter" && handleSend()}
+//         />
+//         <Button onClick={handleSend} disabled={isLoading}>
+//           {isLoading ? (
+//             <Loader2 className="animate-spin w-5 h-5" />
+//           ) : (
+//             <Send className="w-5 h-5" />
+//           )}
+//         </Button>
+//       </div>
+
+//       {/* Recipe Modal */}
+//       <AnimatePresence>
+//         {selectedRecipe && (
+//           <motion.div
+//             initial={{ opacity: 0 }}
+//             animate={{ opacity: 1 }}
+//             exit={{ opacity: 0 }}
+//             className="fixed inset-0 bg-black/50 flex justify-center items-start z-50 p-4 overflow-auto"
+//             onClick={() => setSelectedRecipe(null)}
+//           >
+//             <motion.div
+//               initial={{ y: -50 }}
+//               animate={{ y: 0 }}
+//               exit={{ y: -50 }}
+//               className="bg-white rounded-2xl max-w-2xl w-full p-6 overflow-y-auto max-h-[85vh]"
+//               onClick={(e) => e.stopPropagation()}
+//             >
+//               <Button
+//                 variant="ghost"
+//                 size="sm"
+//                 className="absolute top-2 right-2"
+//                 onClick={() => setSelectedRecipe(null)}
+//               >
+//                 <X />
+//               </Button>
+//               <h2 className="text-2xl font-bold mb-2">
+//                 {selectedRecipe.title}
+//               </h2>
+//               {selectedRecipe.image && (
+//                 <Image
+//                   src={selectedRecipe.image}
+//                   alt={selectedRecipe.title}
+//                   width={400}
+//                   height={250}
+//                   className="rounded-lg object-cover mb-4 w-full"
+//                 />
+//               )}
+//               <div className="flex gap-3 mb-4">
+//                 {selectedRecipe.category && (
+//                   <Badge>{selectedRecipe.category}</Badge>
+//                 )}
+//                 {selectedRecipe.area && <Badge>{selectedRecipe.area}</Badge>}
+//                 {selectedRecipe.cookTime && (
+//                   <Badge>{selectedRecipe.cookTime}</Badge>
+//                 )}
+//               </div>
+//               <h3 className="text-lg font-semibold mb-2">Ingredients:</h3>
+//               <ul className="list-disc list-inside mb-4">
+//                 {selectedRecipe.ingredients.map((ing, i) => (
+//                   <li key={i}>{ing}</li>
+//                 ))}
+//               </ul>
+//               <h3 className="text-lg font-semibold mb-2">Instructions:</h3>
+//               <ol className="list-decimal list-inside">
+//                 {selectedRecipe.instructions.map((inst, i) => (
+//                   <li key={i}>{inst}</li>
+//                 ))}
+//               </ol>
+//             </motion.div>
+//           </motion.div>
+//         )}
+//       </AnimatePresence>
+//     </div>
+//   );
+// }
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
-
+import { useState, useRef, useEffect, useCallback } from "react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { Send, ChefHat, Loader2, X, Copy } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Send, ChefHat, User, Loader2, Clock } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
-import Header from "@/components/Header";
+/* ----------------------- Types ----------------------- */
+interface Recipe {
+  idMeal: string;
+  title: string;
+  image?: string;
+  category?: string;
+  area?: string;
+  ingredients: string[];
+  instructions: string[];
+  cookTime?: string;
+}
 
 interface Message {
   id: string;
   type: "user" | "bot";
   content: string;
-  timestamp: Date;
-  recipe?: Recipe;
+  recipes?: Recipe[];
 }
 
-interface Recipe {
-  title: string;
-  cookTime: string;
-  image?: string;
-  ingredients: string[];
-  instructions: string[];
-}
+/* ----------------------- Helpers ----------------------- */
+const normalize = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^\w\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .join(" ")
+    .trim();
 
-const Chatbot = () => {
-  const [user, setUser] = useState<any>(null);
-  const router = useRouter();
+const buildIngredientsFromMeal = (meal: any): string[] => {
+  const ingredients: string[] = [];
+  for (let i = 1; i <= 20; i++) {
+    const ing = meal[`strIngredient${i}`];
+    const measure = meal[`strMeasure${i}`] ?? "";
+    if (ing && ing.trim())
+      ingredients.push(`${ing.trim()}${measure ? ` — ${measure.trim()}` : ""}`);
+  }
+  return ingredients;
+};
 
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (!userData) {
-      toast.error("Please login to access the recipe generator!");
-      router.push("/recipe");
-      return;
-    }
-    setUser(JSON.parse(userData));
-  }, [router]);
+const splitInstructions = (text?: string): string[] => {
+  if (!text) return [];
+  return text
+    .split(/\r\n|\n{1,}|\.\s+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+};
 
+/* ----------------------- API Search Functions ----------------------- */
+const searchByName = async (q: string, topN = 3): Promise<Recipe[]> => {
+  try {
+    const res = await fetch(
+      `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(
+        q
+      )}`
+    );
+    const data = await res.json();
+    const meals = data?.meals ?? [];
+    return meals.slice(0, topN).map((meal: any) => ({
+      idMeal: meal.idMeal,
+      title: meal.strMeal,
+      image: meal.strMealThumb,
+      category: meal.strCategory,
+      area: meal.strArea,
+      ingredients: buildIngredientsFromMeal(meal),
+      instructions: splitInstructions(meal.strInstructions),
+      cookTime: "30-45 mins",
+    }));
+  } catch {
+    return [];
+  }
+};
+
+const searchByIngredients = async (
+  ingredients: string[],
+  topN = 3
+): Promise<Recipe[]> => {
+  try {
+    const normalized = ingredients.map((i) => normalize(i));
+    const matchCounts: Record<string, number> = {};
+    const mealMeta: Record<string, { strMeal: string; strMealThumb: string }> =
+      {};
+
+    await Promise.all(
+      normalized.map(async (ing) => {
+        if (!ing) return;
+        try {
+          const res = await fetch(
+            `https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(
+              ing
+            )}`
+          );
+          const data = await res.json();
+          const meals = data?.meals ?? [];
+          meals.forEach((m: any) => {
+            const id = m.idMeal;
+            matchCounts[id] = (matchCounts[id] || 0) + 1;
+            if (!mealMeta[id])
+              mealMeta[id] = {
+                strMeal: m.strMeal,
+                strMealThumb: m.strMealThumb,
+              };
+          });
+        } catch {}
+      })
+    );
+
+    if (Object.keys(matchCounts).length === 0) return [];
+
+    const sortedIds = Object.entries(matchCounts)
+      .map(([id, count]) => ({ id, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, topN * 3);
+
+    const details = (
+      await Promise.all(
+        sortedIds.map(async ({ id }) => {
+          try {
+            const res = await fetch(
+              `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`
+            );
+            const data = await res.json();
+            return data?.meals?.[0] ?? null;
+          } catch {
+            return null;
+          }
+        })
+      )
+    ).filter(Boolean);
+
+    const results: { recipe: Recipe; matchCount: number }[] = details.map(
+      (meal: any) => {
+        const mealIngredients = Array.from({ length: 20 }, (_, i) =>
+          (meal[`strIngredient${i + 1}`] || "").toLowerCase().trim()
+        ).filter(Boolean);
+        const matchCount = normalized.filter((ing) =>
+          mealIngredients.some((m) => m.includes(ing) || ing.includes(m))
+        ).length;
+        return {
+          recipe: {
+            idMeal: meal.idMeal,
+            title: meal.strMeal,
+            image: meal.strMealThumb,
+            category: meal.strCategory,
+            area: meal.strArea,
+            ingredients: buildIngredientsFromMeal(meal),
+            instructions: splitInstructions(meal.strInstructions),
+            cookTime: "30-45 mins",
+          },
+          matchCount,
+        };
+      }
+    );
+
+    results.sort((a, b) => b.matchCount - a.matchCount);
+    return results.slice(0, topN).map((r) => r.recipe);
+  } catch {
+    return [];
+  }
+};
+
+const searchByCategory = async (
+  category: string,
+  topN = 3
+): Promise<Recipe[]> => {
+  try {
+    const res = await fetch(
+      `https://www.themealdb.com/api/json/v1/1/filter.php?c=${encodeURIComponent(
+        category
+      )}`
+    );
+    const meals = res ? (await res.json())?.meals ?? [] : [];
+    const details = (
+      await Promise.all(
+        meals.slice(0, topN * 2).map(async (m: any) => {
+          try {
+            const r = await fetch(
+              `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${m.idMeal}`
+            );
+            const d = await r.json();
+            return d?.meals?.[0] ?? null;
+          } catch {
+            return null;
+          }
+        })
+      )
+    ).filter(Boolean);
+    return details.slice(0, topN).map((meal: any) => ({
+      idMeal: meal.idMeal,
+      title: meal.strMeal,
+      image: meal.strMealThumb,
+      category: meal.strCategory,
+      area: meal.strArea,
+      ingredients: buildIngredientsFromMeal(meal),
+      instructions: splitInstructions(meal.strInstructions),
+      cookTime: "30-45 mins",
+    }));
+  } catch {
+    return [];
+  }
+};
+
+/* ----------------------- Component ----------------------- */
+export default function ChatbotPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: "1",
+      id: "welcome",
       type: "bot",
       content:
-        "👋 Hey there, I’m your AI cooking partner! Tell me what ingredients you have or what kind of meal you’d like, and I’ll cook up the perfect recipe for you 🍳",
-      timestamp: new Date(),
+        "👋 Hey! Enter ingredients, dish names or categories (comma separated) and I'll find recipes for you.",
     },
   ]);
-
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const recipes: Record<string, Recipe> = {
-    chicken: {
-      title: "Herb-Crusted Chicken Breast",
-      cookTime: "30 minutes",
-      image: "/images/chicken.jpg",
-      ingredients: [
-        "2 chicken breasts",
-        "2 tbsp olive oil",
-        "1 tsp dried rosemary",
-        "1 lemon (juiced)",
-      ],
-      instructions: [
-        "Preheat oven to 375°F (190°C)",
-        "Rub chicken with olive oil, herbs, and lemon juice",
-        "Bake for 20–25 mins until golden and cooked through",
-      ],
-    },
-    pasta: {
-      title: "Creamy Garlic Parmesan Pasta",
-      cookTime: "20 minutes",
-      image: "/images/pasta.jpg",
-      ingredients: [
-        "1 lb pasta",
-        "1 cup heavy cream",
-        "1 cup Parmesan cheese",
-        "4 cloves garlic",
-      ],
-      instructions: [
-        "Cook pasta until al dente",
-        "Sauté garlic in butter, then add cream and cheese",
-        "Toss pasta in sauce until creamy and delicious",
-      ],
-    },
+  const suggestions = [
+    "Vegetarian",
+    "Vegan",
+    "Seafood",
+    "Chicken",
+    "Beef",
+    "Dessert",
+    "Pasta",
+    "Tomato",
+    "Potato",
+    "Cheese",
+  ];
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const categoryMap: Record<string, string> = {
+    vegetarian: "Vegetarian",
+    vegan: "Vegan",
+    seafood: "Seafood",
+    chicken: "Chicken",
+    beef: "Beef",
+    dessert: "Dessert",
+    pasta: "Pasta",
   };
 
-  const generateRecipe = (userInput: string) => {
-    if (userInput.toLowerCase().includes("chicken")) return recipes.chicken;
-    if (userInput.toLowerCase().includes("pasta")) return recipes.pasta;
-    return recipes.chicken;
+  const saveToHistory = (recipe: Recipe, userInput: string) => {
+    try {
+      const storedHistory = localStorage.getItem("recipeHistory");
+      const history = storedHistory ? JSON.parse(storedHistory) : [];
+      const newItem = {
+        id: `${Date.now()}`,
+        title: recipe.title,
+        timestamp: new Date().toISOString(),
+        userInput,
+        recipe,
+      };
+      localStorage.setItem(
+        "recipeHistory",
+        JSON.stringify([newItem, ...history])
+      );
+    } catch (e) {
+      console.error("Failed to save history", e);
+    }
   };
 
-  const saveRecipeToHistory = (recipe: Recipe, userInput: string) => {
-    const recipeWithId = {
-      id: Date.now().toString(),
-      ...recipe,
-      timestamp: new Date().toISOString(),
-      userInput,
-    };
-    const history = JSON.parse(localStorage.getItem("recipeHistory") || "[]");
-    history.unshift(recipeWithId);
-    if (history.length > 50) history.splice(50);
-    localStorage.setItem("recipeHistory", JSON.stringify(history));
-  };
+  const handleSend = useCallback(async () => {
+    const raw = inputValue.trim();
+    if (!raw) return;
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: "user",
-      content: inputValue,
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, userMessage]);
-    const currentInput = inputValue;
+    setMessages((prev) => [
+      ...prev,
+      { id: `${Date.now()}-u`, type: "user", content: raw },
+    ]);
     setInputValue("");
     setIsLoading(true);
 
-    setTimeout(() => {
-      const recipe = generateRecipe(currentInput);
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: "bot",
-        content: `Here’s your recipe for **${recipe.title}** 🍽️`,
-        timestamp: new Date(),
-        recipe,
-      };
-      setMessages((prev) => [...prev, botMessage]);
-      saveRecipeToHistory(recipe, currentInput);
-      toast.success("✨ Recipe saved to your history!");
-      setIsLoading(false);
-    }, 1000);
+    const queries = raw
+      .split(",")
+      .map((q) => q.trim())
+      .filter(Boolean);
+
+    for (const query of queries) {
+      let recipes: Recipe[] = [];
+      const lower = query.toLowerCase();
+
+      // Check category
+      let matchedCategory = "";
+      for (const key of Object.keys(categoryMap))
+        if (lower.includes(key)) matchedCategory = categoryMap[key];
+
+      if (matchedCategory) recipes = await searchByCategory(matchedCategory, 3);
+
+      // If ingredients
+      if (recipes.length === 0) {
+        const tokens = query.split(/\s+/).filter(Boolean);
+        if (tokens.length >= 1)
+          recipes = await searchByIngredients(tokens.slice(0, 5), 3);
+      }
+
+      // Fallback: search by name
+      if (recipes.length === 0) recipes = await searchByName(query, 3);
+
+      // Push bot message and save to history
+      recipes.forEach((r) => saveToHistory(r, query));
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-b`,
+          type: "bot",
+          content: recipes.length
+            ? `Top ${recipes.length} recipes for "${query}"`
+            : `No recipes found for "${query}" 😢`,
+          recipes,
+        },
+      ]);
+    }
+
+    setIsLoading(false);
+  }, [inputValue]);
+
+  const handleCopy = (recipe: Recipe) => {
+    const text = `Recipe: ${
+      recipe.title
+    }\n\nIngredients:\n${recipe.ingredients.join(
+      "\n"
+    )}\n\nInstructions:\n${recipe.instructions.join("\n")}`;
+    navigator.clipboard.writeText(text);
+    toast.success("Recipe copied!");
   };
 
-  if (!user) return <div>Loading...</div>;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-100 to-yellow-50">
-      <Header/>
-      <div className="max-w-4xl mx-auto p-4">
-        <Card className="overflow-hidden border-none shadow-xl backdrop-blur-md bg-white/70">
-          <div className="bg-gradient-to-r from-orange-600 to-amber-500 text-white p-6">
-            <div className="flex items-center gap-3">
-              <ChefHat className="h-8 w-8" />
-              <h1 className="text-2xl font-bold">Cookaro Recipe Chatbot</h1>
-            </div>
-            <p className="text-sm opacity-90 mt-1">
-              Discover delicious recipes instantly 🍽️
-            </p>
-          </div>
-
-          <div className="h-[420px] overflow-y-auto p-6 space-y-4">
-            <AnimatePresence>
-              {messages.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3 }}
-                  className={`flex gap-3 ${
-                    msg.type === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  {msg.type === "bot" && (
-                    <div className="w-9 h-9 bg-orange-100 rounded-full flex items-center justify-center">
-                      <ChefHat className="h-4 w-4 text-orange-600" />
-                    </div>
-                  )}
-
-                  <div className="max-w-[80%] space-y-2">
-                    <Card
-                      className={`p-3 ${
-                        msg.type === "user"
-                          ? "bg-orange-600 text-white rounded-br-none shadow-md"
-                          : "bg-white/70 backdrop-blur-sm border border-orange-100 shadow-md"
-                      }`}
-                    >
-                      <CardContent className="p-2">
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
-                      </CardContent>
-                    </Card>
-
-                    {/* Recipe Preview Card */}
-                    {msg.recipe && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                      >
-                        <Card className="overflow-hidden border-orange-200 shadow-md hover:shadow-lg transition">
-                          <img
-                            src={msg.recipe.image}
-                            alt={msg.recipe.title}
-                            className="w-full h-40 object-cover"
-                          />
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-center">
-                              <h3 className="text-lg font-semibold text-orange-700">
-                                {msg.recipe.title}
-                              </h3>
-                              <div className="flex items-center gap-1 text-orange-600 text-sm">
-                                <Clock className="w-4 h-4" />{" "}
-                                {msg.recipe.cookTime}
-                              </div>
-                            </div>
-                            <Button
-                              size="sm"
-                              className="mt-3 bg-orange-600 hover:bg-orange-700 transition"
-                            >
-                              View Full Recipe
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    )}
-                  </div>
-
-                  {msg.type === "user" && (
-                    <div className="w-9 h-9 bg-orange-200 rounded-full flex items-center justify-center">
-                      <User className="h-4 w-4 text-orange-800" />
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-
-            {isLoading && (
-              <div className="flex items-center gap-2 text-orange-600">
-                <Loader2 className="animate-spin h-4 w-4" />
-                <p>Cooking up something tasty...</p>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <div className="px-6 py-4 border-t bg-orange-50/70 flex flex-wrap gap-2">
-            {[
-              "I have chicken",
-              "Quick pasta",
-              "Healthy meal",
-              "Vegetarian dish",
-            ].map((text, i) => (
-              <Badge
-                key={i}
-                onClick={() => setInputValue(text)}
-                className="cursor-pointer border-orange-300 hover:bg-orange-100 transition"
-              >
-                {text}
-              </Badge>
-            ))}
-          </div>
-
-          <div className="p-4 border-t bg-white/60 backdrop-blur-sm">
-            <div className="flex gap-3">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Type your ingredients or meal idea..."
-                className="flex-1"
-                disabled={isLoading}
-              />
-              <Button
-                onClick={handleSend}
-                disabled={!inputValue.trim() || isLoading}
-                className="bg-orange-600 hover:bg-orange-700 transition"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </Card>
+    <div className="max-w-4xl mx-auto p-4 flex flex-col h-[90vh]">
+      {/* Suggestions */}
+      <div className="flex flex-wrap gap-2 mb-2">
+        {suggestions.map((s) => (
+          <Badge
+            key={s}
+            className="cursor-pointer hover:bg-green-200"
+            onClick={() =>
+              setInputValue((prev) => (prev ? prev + ", " + s : s))
+            }
+          >
+            {s}
+          </Badge>
+        ))}
       </div>
+
+      <div className="flex-1 overflow-y-auto mb-4">
+        <AnimatePresence>
+          {messages.map((msg) => (
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className={`flex ${
+                msg.type === "user" ? "justify-end" : "justify-start"
+              } mb-3`}
+            >
+              <Card className="max-w-[75%] p-3">
+                <CardContent>
+                  {msg.type === "bot" && (
+                    <ChefHat className="w-5 h-5 mb-1 text-green-600" />
+                  )}
+                  <p>{msg.content}</p>
+                  {msg.recipes &&
+                    msg.recipes.map((r) => (
+                      <div
+                        key={r.idMeal}
+                        className="mt-2 border rounded-lg p-2 cursor-pointer hover:bg-gray-100 flex items-center gap-2 justify-between"
+                      >
+                        <div
+                          className="flex items-center gap-2"
+                          onClick={() => setSelectedRecipe(r)}
+                        >
+                          {r.image && (
+                            <Image
+                              src={r.image}
+                              alt={r.title}
+                              width={50}
+                              height={50}
+                              className="rounded-md object-cover"
+                            />
+                          )}
+                          <div>
+                            <p className="font-semibold">{r.title}</p>
+                            <p className="text-sm text-gray-500">
+                              {r.category}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-1"
+                          onClick={() => handleCopy(r)}
+                        >
+                          <Copy className="w-4 h-4" />
+                          Copy
+                        </Button>
+                      </div>
+                    ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        <div ref={messagesEndRef} />
+      </div>
+
+      <div className="flex gap-2">
+        <Input
+          placeholder="Type ingredients, dishes or categories..."
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+        />
+        <Button onClick={handleSend} disabled={isLoading}>
+          {isLoading ? (
+            <Loader2 className="animate-spin w-5 h-5" />
+          ) : (
+            <Send className="w-5 h-5" />
+          )}
+        </Button>
+      </div>
+
+      {/* Recipe Modal */}
+      <AnimatePresence>
+        {selectedRecipe && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex justify-center items-start z-50 p-4 overflow-auto"
+            onClick={() => setSelectedRecipe(null)}
+          >
+            <motion.div
+              initial={{ y: -50 }}
+              animate={{ y: 0 }}
+              exit={{ y: -50 }}
+              className="bg-white rounded-2xl max-w-2xl w-full p-6 overflow-y-auto max-h-[85vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 right-2"
+                onClick={() => setSelectedRecipe(null)}
+              >
+                <X />
+              </Button>
+              <h2 className="text-2xl font-bold mb-2">
+                {selectedRecipe.title}
+              </h2>
+              {selectedRecipe.image && (
+                <Image
+                  src={selectedRecipe.image}
+                  alt={selectedRecipe.title}
+                  width={350}
+                  height={200}
+                  className="rounded-lg object-cover mb-4 w-full"
+                />
+              )}
+              <div className="flex gap-3 mb-4">
+                {selectedRecipe.category && (
+                  <Badge>{selectedRecipe.category}</Badge>
+                )}
+                {selectedRecipe.area && <Badge>{selectedRecipe.area}</Badge>}
+                {selectedRecipe.cookTime && (
+                  <Badge>{selectedRecipe.cookTime}</Badge>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mb-4 flex items-center gap-1"
+                onClick={() => handleCopy(selectedRecipe)}
+              >
+                <Copy className="w-4 h-4" />
+                Copy Recipe
+              </Button>
+              <h3 className="text-lg font-semibold mb-2">Ingredients:</h3>
+              <ul className="list-disc list-inside mb-4">
+                {selectedRecipe.ingredients.map((ing, i) => (
+                  <li key={i}>{ing}</li>
+                ))}
+              </ul>
+              <h3 className="text-lg font-semibold mb-2">Instructions:</h3>
+              <ol className="list-decimal list-inside">
+                {selectedRecipe.instructions.map((inst, i) => (
+                  <li key={i}>{inst}</li>
+                ))}
+              </ol>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-};
-
-export default Chatbot;
+}

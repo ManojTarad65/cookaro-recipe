@@ -3,7 +3,7 @@
 
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
-import { Sun, Moon, Bell } from "lucide-react";
+import { ChefHat, Sun, Moon, Bell } from "lucide-react";
 import Link from "next/link";
 
 interface Notification {
@@ -36,12 +36,23 @@ export default function Header() {
 
   return (
     <header className="flex items-center justify-between bg-card px-6 py-4 shadow-md sticky top-0 z-50">
-      <h1 className="text-xl font-bold text-primary-foreground">Cookaro 🍳</h1>
+      <Link
+        href="/"
+        className="flex items-center space-x-2 text-orange-600 hover:text-orange-700 transition-colors"
+      >
+        <ChefHat className="h-8 w-8" />
+        <span className="text-xl font-bold">COOKARO</span>
+      </Link>
 
       <div className="flex items-center gap-4 relative">
-        <Link href="/">Home</Link>
-        <Link href="/about">About</Link>
-        <Link href="/contact">Contact</Link>
+        <Link
+          href="/"
+          className="text-sm font-medium transition-colors hover:text-orange-600"
+        >
+          Home
+        </Link>
+        <Link href="/about" className="text-sm font-medium transition-colors hover:text-orange-600">About</Link>
+        <Link href="/contact" className="text-sm font-medium transition-colors hover:text-orange-600">Contact</Link>
         {/* Dark/Light Toggle */}
         <button
           onClick={toggleDarkMode}

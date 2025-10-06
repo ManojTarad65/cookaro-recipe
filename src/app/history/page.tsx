@@ -1,20 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Trash2, Search, Loader2 } from "lucide-react";
+import { Trash2, Search, Loader2, Copy } from "lucide-react";
 import { toast } from "sonner";
-import Header from "@/components/Header";
 
 interface RecipeHistoryItem {
   id: string;
-  title: string;
+  title?: string;
   timestamp: string;
   userInput: string;
-  recipe: any;
+  recipe?: {
+    title?: string;
+    ingredients?: string[];
+    instructions?: string[];
+  };
 }
 
 const HistoryPage = () => {
@@ -38,8 +40,8 @@ const HistoryPage = () => {
   useEffect(() => {
     const filtered = history.filter(
       (item) =>
-        item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.userInput.toLowerCase().includes(searchTerm.toLowerCase())
+        item.recipe?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.userInput?.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredHistory(filtered);
   }, [searchTerm, history]);
@@ -52,9 +54,19 @@ const HistoryPage = () => {
     toast.success("Recipe removed from history!");
   };
 
+  const handleCopy = (item: RecipeHistoryItem) => {
+    if (!item.recipe) return;
+    const text = `
+${item.recipe.title || "Recipe"} 
+Ingredients: ${item.recipe.ingredients?.join(", ")}
+Instructions: ${item.recipe.instructions?.join(" ")}
+    `;
+    navigator.clipboard.writeText(text);
+    toast.success("Recipe copied to clipboard!");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
-
       <div className="max-w-5xl mx-auto p-6">
         <h1 className="text-4xl font-bold text-gray-900 mb-6 text-center">
           Your Recipe History
@@ -82,16 +94,16 @@ const HistoryPage = () => {
           </p>
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
-            {filteredHistory.map((item) => (
+            {filteredHistory.map((item, idx) => (
               <Card
-                key={item.id}
+                key={`${item.id}-${idx}`}
                 className="hover:shadow-lg transition-all duration-300 border-orange-100"
               >
                 <CardContent>
                   <div className="flex justify-between items-start">
                     <div>
                       <h2 className="text-xl font-semibold text-gray-900">
-                        {item.recipe.title}
+                        {item.recipe?.title || "Untitled Recipe"}
                       </h2>
                       <p className="text-sm text-gray-500 mb-2">
                         Requested:{" "}
@@ -104,33 +116,39 @@ const HistoryPage = () => {
                       <div className="text-gray-600 text-sm">
                         <strong>Ingredients:</strong>
                         <ul className="list-disc ml-5">
-                          {item.recipe.ingredients.map(
-                            (ing: string, idx: number) => (
-                              <li key={idx}>{ing}</li>
-                            )
-                          )}
+                          {item.recipe?.ingredients?.map((ing, idx) => (
+                            <li key={idx}>{ing}</li>
+                          ))}
                         </ul>
                       </div>
 
                       <div className="text-gray-600 text-sm mt-2">
                         <strong>Instructions:</strong>
                         <ol className="list-decimal ml-5">
-                          {item.recipe.instructions.map(
-                            (inst: string, idx: number) => (
-                              <li key={idx}>{inst}</li>
-                            )
-                          )}
+                          {item.recipe?.instructions?.map((inst, idx) => (
+                            <li key={idx}>{inst}</li>
+                          ))}
                         </ol>
                       </div>
                     </div>
 
-                    <Button
-                      variant="destructive"
-                      className="h-8 w-8 p-0 flex items-center justify-center"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant="destructive"
+                        className="h-8 w-8 p-0 flex items-center justify-center"
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        className="h-8 w-8 p-0 flex items-center justify-center"
+                        onClick={() => handleCopy(item)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
