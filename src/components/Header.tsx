@@ -51,6 +51,7 @@ export default function Header() {
         >
           Home
         </Link>
+        <Link href="/nutrition" className="text-sm font-medium transition-colors hover:text-orange-600">Nutrition</Link>
         <Link href="/about" className="text-sm font-medium transition-colors hover:text-orange-600">About</Link>
         <Link href="/contact" className="text-sm font-medium transition-colors hover:text-orange-600">Contact</Link>
         {/* Dark/Light Toggle */}

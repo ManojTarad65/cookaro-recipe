@@ -1,6 +1,6 @@
 "use client";
 
-import { ChefHat, Sparkles, Users, Target, Lightbulb } from "lucide-react";
+import { ChefHat, Sparkles, Users, Target, Lightbulb, History } from "lucide-react";
 import { motion } from "framer-motion";
 import Particles from "react-tsparticles";
 import { loadFull } from "tsparticles";
@@ -18,10 +18,10 @@ const About = () => {
         "We leverage cutting-edge AI technology to transform how people cook and discover recipes.",
     },
     {
-      icon: Users,
-      title: "Community",
+      icon: History,
+      title: "Save History",
       description:
-        "Building a vibrant community of food lovers who share and discover amazing recipes together.",
+        "Saving your recipe history for easy access and you can use it in the future, if you want to.",
     },
     {
       icon: Target,
@@ -71,7 +71,7 @@ const About = () => {
       >
         <ChefHat className="h-16 w-16 text-orange-600 mx-auto mb-6 drop-shadow-lg" />
         <h1 className="text-5xl font-bold text-gray-900 mb-6">
-          About RecipeAI
+          About COOKARO
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
           We're on a mission to revolutionize home cooking with the power of
@@ -96,7 +96,7 @@ const About = () => {
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-6">Our Story</h2>
             <p className="text-lg text-gray-600 mb-6">
-              RecipeAI was born from a simple observation: too many people
+              COOKARO was born from a simple observation: too many people
               struggle with the question "What should I cook?" every day. With
               busy schedules and limited ingredients at home, meal planning
               becomes a daily challenge.
@@ -108,7 +108,7 @@ const About = () => {
               personalized recipes.
             </p>
             <p className="text-lg text-gray-600">
-              Today, RecipeAI helps thousands of home cooks discover new flavors
+              Today, COOKARO helps thousands of home cooks discover new flavors
               and create memorable meals with confidence.
             </p>
           </motion.div>
@@ -144,7 +144,7 @@ const About = () => {
               Our Values
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              The principles that guide everything we do at RecipeAI
+              The principles that guide everything we do at COOKARO
             </p>
           </div>
 
@@ -180,8 +180,8 @@ const About = () => {
       >
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8 text-center">
           {[
-            ["10,000+", "Recipes Generated"],
-            ["5,000+", "Happy Cooks"],
+            ["100+", "Recipes Generated"],
+            ["50+", "Happy Cooks"],
             ["95%", "Satisfaction Rate"],
           ].map(([stat, label], i) => (
             <motion.div
@@ -214,24 +214,16 @@ const About = () => {
             Join our community and start creating amazing recipes with AI today
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/chatbot">
+            <Link href="/recipe">
               <Button
                 size="lg"
                 variant="secondary"
-                className="text-lg px-8 py-3 hover:scale-105 transition-all"
+                className="text-lg px-8 py-3 hover:scale-105 transition-all cursor-pointer"
               >
-                Try RecipeAI Now
+                Try COOKARO Now
               </Button>
             </Link>
-            <Link href="/signup">
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-lg px-8 py-3 border-white text-white hover:bg-white hover:text-orange-600 hover:scale-105 transition-all"
-              >
-                Create Account
-              </Button>
-            </Link>
+         
           </div>
         </div>
       </motion.section>

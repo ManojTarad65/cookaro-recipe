@@ -1,23 +1,34 @@
-// import Footer from "@/components/Footer";
-// import Hero from "@/components/Hero";
-// import Landing from "@/components/Landing";
+"use client";
 
+import { useState, useEffect } from "react";
 import LoadingScreen from "@/components/LoadingScreen";
-
-
-// export default function Home() {
-//   return (
-//     <main className="flex flex-col">
-//       <Landing/>
-// <Hero/>
-
-// <Footer />
-
-//     </main>
-//   );
-// }₹
-
+import Login from "@/components/Login"; // your login component
+import Hero from "@/components/Hero";
+import Footer from "@/components/Footer";
 
 export default function Home() {
-  return <LoadingScreen />;
+  const [isLoadingComplete, setIsLoadingComplete] = useState(false);
+  const [isLandingComplete, setIsLandingComplete] = useState(false);
+
+  return (
+    <>
+      {!isLoadingComplete ? (
+        <LoadingScreen onComplete={() => setIsLoadingComplete(true)} />
+      ) : !isLandingComplete ? (
+        <LoadingScreen onComplete={() => setIsLandingComplete(true)} />
+      ) : (
+        <LoginWrapper />
+      )}  
+    </>
+  );
+}
+
+// ✅ Wrapper to handle login -> main content flow
+function LoginWrapper() {
+    return  (
+      <main className="flex flex-col min-h-screen">
+        <Hero />
+        <Footer />
+      </main>
+    )
 }
