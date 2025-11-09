@@ -51,16 +51,16 @@ export default function LoginPage() {
 
   return session ? (
     // ✅ After Login — Welcome Page
-    <div className="flex items-center justify-center h-screen relative overflow-hidden bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#0a0a0a] text-white">
+    <div className="flex items-center justify-center h-screen relative overflow-hidden bg-gradient-to-br from-orange-700 via-amber-500 to-orange-700 text-white">
       <Particles init={particlesInit} options={particlesOptions} />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative z-10 w-[90%] max-w-sm bg-white/10 backdrop-blur-2xl rounded-3xl p-10 flex flex-col items-center border border-orange-400/20 shadow-[0_0_40px_-10px_rgba(255,140,0,0.4)]"
+        className="relative z-10 w-[90%] max-w-sm bg-white/10 backdrop-blur-2xl rounded-3xl p-10 flex flex-col items-center border border-black shadow-[0_0_40px_-10px_rgba(255,140,0,0.4)]"
       >
-        <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-orange-500/80 shadow-lg mb-5">
+        <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-gray-700 shadow-lg mb-5">
           <img
             src={session.user?.image || ""}
             alt="Profile"
@@ -68,10 +68,10 @@ export default function LoginPage() {
           />
         </div>
 
-        <h1 className="text-2xl font-bold text-orange-400 mb-1">
+        <h1 className="text-2xl font-bold text-white mb-1">
           Welcome, {session.user?.name?.split(" ")[0]}!
         </h1>
-        <p className="text-sm text-gray-300 mb-6">
+        <p className="text-sm text-white mb-6">
           Ready to cook something delicious today?
         </p>
 

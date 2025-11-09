@@ -1,9 +1,8 @@
-
 "use client";
 
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
-import { ChefHat, Sun, Moon, Bell } from "lucide-react";
+import { ChefHat, Sun, Moon, Bell, Menu, X } from "lucide-react";
 import Link from "next/link";
 
 interface Notification {
@@ -17,6 +16,7 @@ export default function Header() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Example notifications
   const notifications: Notification[] = [
@@ -26,7 +26,6 @@ export default function Header() {
   ];
 
   if (!session) return null;
-
   const firstName = session.user?.name?.split(" ")[0];
 
   const toggleDarkMode = () => {
@@ -35,25 +34,52 @@ export default function Header() {
   };
 
   return (
-    <header className="flex items-center justify-between bg-card px-6 py-4 shadow-md sticky top-0 z-50">
+    <header className="flex items-center justify-between bg-card px-4 md:px-6 py-3 shadow-md sticky top-0 z-50">
+      {/* Logo */}
       <Link
         href="/"
         className="flex items-center space-x-2 text-orange-600 hover:text-orange-700 transition-colors"
       >
-        <ChefHat className="h-8 w-8" />
-        <span className="text-xl font-bold">COOKARO</span>
+        <ChefHat className="h-7 w-7 md:h-8 md:w-8" />
+        <span className="text-lg md:text-xl font-bold">EatoAI</span>
       </Link>
 
-      <div className="flex items-center gap-4 relative">
-        <Link
-          href="/"
-          className="text-sm font-medium transition-colors hover:text-orange-600"
-        >
+      {/* Desktop Nav */}
+      <nav className="hidden md:flex items-center gap-6 relative">
+        <Link href="/" className="text-sm font-medium hover:text-orange-600">
           Home
         </Link>
-        <Link href="/nutrition" className="text-sm font-medium transition-colors hover:text-orange-600">Nutrition</Link>
-        <Link href="/about" className="text-sm font-medium transition-colors hover:text-orange-600">About</Link>
-        <Link href="/contact" className="text-sm font-medium transition-colors hover:text-orange-600">Contact</Link>
+        <Link
+          href="/nutrition"
+          className="text-sm font-medium hover:text-orange-600"
+        >
+          Nutrition
+        </Link>
+        <Link
+          href="/about"
+          className="text-sm font-medium hover:text-orange-600"
+        >
+          About
+        </Link>
+        <Link
+          href="/today"
+          className="text-sm font-medium hover:text-orange-600"
+        >
+          Today
+        </Link>
+        <Link
+          href="/chat"
+          className="text-sm font-medium hover:text-orange-600"
+        >
+          Chat with EatoAI
+        </Link>
+        <Link
+          href="/contact"
+          className="text-sm font-medium hover:text-orange-600"
+        >
+          Contact
+        </Link>
+
         {/* Dark/Light Toggle */}
         <button
           onClick={toggleDarkMode}
@@ -70,40 +96,33 @@ export default function Header() {
         <div className="relative">
           <button
             onClick={() => setNotifOpen(!notifOpen)}
-            className="p-2 rounded-full hover:bg-primary/10 relative cursor-pointer"
+            className="p-2 rounded-full hover:bg-primary/10 relative"
           >
             <Bell className="h-5 w-5 cursor-pointer" />
-            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive"></span>
+            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
           </button>
 
           {notifOpen && (
-            <div className="absolute right-0 mt-2 w-80 rounded-lg border border-border bg-card shadow-lg overflow-hidden">
-              <h3 className="px-4 py-2 text-sm font-semibold border-b border-border">
+            <div className="absolute right-0 mt-2 w-72 rounded-lg border bg-white shadow-lg overflow-hidden">
+              <h3 className="px-4 py-2 text-sm font-semibold border-b">
                 Notifications
               </h3>
-              <div className="flex flex-col divide-y divide-border max-h-64 overflow-y-auto">
+              <div className="max-h-64 overflow-y-auto divide-y">
                 {notifications.map((notif) => (
                   <div
                     key={notif.id}
-                    className="px-4 py-2 text-sm hover:bg-primary/5 cursor-pointer"
+                    className="px-4 py-2 text-sm hover:bg-orange-50"
                   >
                     <p>{notif.message}</p>
-                    <span className="text-xs text-muted-foreground">
-                      {notif.time}
-                    </span>
+                    <span className="text-xs text-gray-500">{notif.time}</span>
                   </div>
                 ))}
-                {notifications.length === 0 && (
-                  <p className="px-4 py-2 text-sm text-muted-foreground">
-                    No notifications
-                  </p>
-                )}
               </div>
             </div>
           )}
         </div>
 
-        {/* Profile */}
+        {/* Profile Dropdown */}
         <div className="relative">
           <button
             onClick={() => setProfileOpen(!profileOpen)}
@@ -120,22 +139,70 @@ export default function Header() {
           </button>
 
           {profileOpen && (
-            <div className="absolute right-0 mt-2 w-40 rounded-lg border border-border bg-card shadow-lg ">
+            <div className="absolute right-0 mt-2 w-40 rounded-lg border bg-white shadow-lg">
               <Link href="/history">
-                <button className="w-full px-4 py-2 text-left text-sm font-semibold cursor-pointer">
+                <button className="w-full px-4 py-2 text-left text-sm hover:bg-orange-50">
                   History
                 </button>
               </Link>
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-destructive/10 cursor-pointer"
+                className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-50"
               >
                 Log Out
               </button>
             </div>
           )}
         </div>
-      </div>
+      </nav>
+
+      {/* Mobile Menu Button */}
+      <button
+        className="md:hidden p-2 rounded-md hover:bg-orange-100"
+        onClick={() => setMenuOpen(!menuOpen)}
+      >
+        {menuOpen ? (
+          <X className="h-6 w-6 text-orange-600" />
+        ) : (
+          <Menu className="h-6 w-6 text-orange-600" />
+        )}
+      </button>
+
+      {/* Mobile Menu Dropdown */}
+      {menuOpen && (
+        <div className="absolute top-16 left-0 w-full bg-white shadow-md border-t z-40 flex flex-col items-center space-y-3 py-6">
+          {[
+            "Home",
+            "Nutrition",
+            "About",
+            "Today",
+            "Chat with EatoAI",
+            "Contact",
+          ].map((item, index) => (
+            <Link
+              key={index}
+              href={`/${item.toLowerCase().replace(/ /g, "")}`}
+              onClick={() => setMenuOpen(false)}
+              className="text-sm font-medium text-gray-800 hover:text-orange-600 transition-colors"
+            >
+              {item}
+            </Link>
+          ))}
+          <div className="flex items-center gap-3 mt-2">
+            <button onClick={toggleDarkMode}>
+              {darkMode ? (
+                <Sun className="h-5 w-5 text-orange-600" />
+              ) : (
+                <Moon className="h-5 w-5 text-gray-600" />
+              )}
+            </button>
+            <Bell
+              className="h-5 w-5 text-gray-700 cursor-pointer"
+              onClick={() => alert("Notifications coming soon!")}
+            />
+          </div>
+        </div>
+      )}
     </header>
   );
 }

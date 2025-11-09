@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChefHat, Sparkles, Clock, Users } from "lucide-react";
+import { ChefHat, Sparkles, Clock, Users, ChartBarStackedIcon, NutIcon, CookieIcon } from "lucide-react";
 import { toast } from "sonner";
 
 const Hero = () => {
@@ -32,20 +32,27 @@ const Hero = () => {
   const features = [
     {
       icon: Sparkles,
-      title: "AI-Powered Recipes",
+      title: "AI Chat Assistant",
       description:
-        "Get personalized recipes based on your ingredients and preferences",
+        "Chat with EatoAI to get instant recipe ideas, nutrition tips, and meal suggestions.",
+    },
+    {
+      icon: CookieIcon,
+      title: "Smart Recipe Generator",
+      description:
+        "Enter your ingredients and get delicious AI-curated recipes in seconds.",
+    },
+    {
+      icon: ChartBarStackedIcon,
+      title: "Daily Meal Log",
+      description:
+        "Track your daily meals, calories, and nutrients for a balanced lifestyle.",
     },
     {
       icon: Clock,
-      title: "Quick & Easy",
+      title: "Recipe History",
       description:
-        "Find recipes that match your available time and skill level",
-    },
-    {
-      icon: Users,
-      title: "Community Favorites",
-      description: "Discover trending recipes loved by our cooking community",
+        "Access all your previously generated recipes anytime — your smart food journal.",
     },
   ];
 
@@ -56,25 +63,25 @@ const Hero = () => {
         <div className="max-w-7xl mx-auto text-center">
           <div className="animate-fade-in">
             <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
-              Cook Smarter with
+              Discover Smarter
               <span className="text-orange-600 block">
-                AI-Generated Recipes
+                Meals with EatoAI 🍳
               </span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Transform your available ingredients into delicious meals. Our AI
-              chatbot creates personalized recipes just for you.
+              Your AI-powered cooking partner that turns simple ingredients into
+              delicious, personalized recipes in seconds.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/recipe">
-              <Button
-                size="lg"
-                className="bg-orange-600 hover:bg-orange-700 text-lg px-8 py-3 animate-scale-in"
-                onClick={handleStartCooking}
-              >
-                Start Cooking
-                <ChefHat className="ml-2 h-5 w-5" />
-              </Button>
+                <Button
+                  size="lg"
+                  className="bg-orange-600 hover:bg-orange-700 text-lg px-8 py-3 animate-scale-in"
+                  onClick={handleStartCooking}
+                >
+                  Explore Recipes
+                  <ChefHat className="ml-2 h-5 w-5" />
+                </Button>
               </Link>
               <Link href="/about">
                 <Button
@@ -82,7 +89,7 @@ const Hero = () => {
                   size="lg"
                   className="text-lg px-8 py-3 border-orange-200 hover:bg-orange-50"
                 >
-                  Learn More
+                  About EatoAI
                 </Button>
               </Link>
             </div>
@@ -95,11 +102,11 @@ const Hero = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Why Choose COOKARO?
+              Why EatoAI Stands Out?
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Experience the future of cooking with our intelligent recipe
-              generation system
+              Discover how EatoAI makes healthy cooking smarter, simpler, and
+              more personalized.
             </p>
           </div>
 

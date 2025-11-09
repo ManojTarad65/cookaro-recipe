@@ -1,49 +1,55 @@
+
 "use client";
 
-import { ChefHat, Sparkles, Users, Target, Lightbulb, History } from "lucide-react";
+import { useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import Particles from "react-tsparticles";
 import { loadFull } from "tsparticles";
-import { useCallback } from "react";
+import { ChefHat, Sparkles, History, Target, Lightbulb } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 const About = () => {
-  const values = [
-    {
-      icon: Sparkles,
-      title: "Innovation",
-      description:
-        "We leverage cutting-edge AI technology to transform how people cook and discover recipes.",
-    },
-    {
-      icon: History,
-      title: "Save History",
-      description:
-        "Saving your recipe history for easy access and you can use it in the future, if you want to.",
-    },
-    {
-      icon: Target,
-      title: "Simplicity",
-      description:
-        "Making cooking accessible to everyone, regardless of skill level or available ingredients.",
-    },
-    {
-      icon: Lightbulb,
-      title: "Creativity",
-      description:
-        "Inspiring culinary creativity by suggesting unique combinations and cooking techniques.",
-    },
-  ];
+  // ✅ Memoized values to prevent re-renders
+  const values = useMemo(
+    () => [
+      {
+        icon: Sparkles,
+        title: "Innovation",
+        description:
+          "We harness the power of cutting-edge AI to revolutionize how people cook, eat, and experience food — bringing intelligence to every meal.",
+      },
+      {
+        icon: History,
+        title: "Save History",
+        description:
+          "Every recipe you explore is part of your food journey. EatoAI saves your history so you can revisit favorite meals, track your nutrition, and evolve your cooking style over time.",
+      },
+      {
+        icon: Target,
+        title: "Simplicity",
+        description:
+          "We believe great cooking shouldn’t be complicated. Our mission is to make healthy, personalized meal planning effortless and accessible for everyone — regardless of experience or resources.",
+      },
+      {
+        icon: Lightbulb,
+        title: "Creativity",
+        description:
+          "Cooking is an art, and EatoAI is your creative partner. We inspire you to experiment with unique ingredients, new flavors, and innovative techniques that make every dish special.",
+      },
+    ],
+    []
+  );
 
+  // ✅ Particle Initialization
   const particlesInit = useCallback(async (engine: any) => {
     await loadFull(engine);
   }, []);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-white">
-      {/* 🔹 Background Particles */}
+    <div className="relative min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-white overflow-hidden">
+      {/* 🔹 Animated Background */}
       <Particles
         id="tsparticles"
         init={particlesInit}
@@ -51,11 +57,11 @@ const About = () => {
           background: { color: "transparent" },
           fpsLimit: 60,
           particles: {
-            number: { value: 40 },
+            number: { value: 35 },
             color: { value: "#f97316" },
-            opacity: { value: 0.3 },
-            size: { value: 3 },
-            move: { enable: true, speed: 1.2, direction: "none", random: true },
+            opacity: { value: 0.25 },
+            size: { value: 2.8 },
+            move: { enable: true, speed: 1, random: true },
           },
         }}
         className="absolute inset-0 z-0"
@@ -70,17 +76,14 @@ const About = () => {
         viewport={{ once: true }}
       >
         <ChefHat className="h-16 w-16 text-orange-600 mx-auto mb-6 drop-shadow-lg" />
-        <h1 className="text-5xl font-bold text-gray-900 mb-6">
-          About COOKARO
-        </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-          We're on a mission to revolutionize home cooking with the power of
-          artificial intelligence, making delicious meals accessible to
-          everyone.
+        <h1 className="text-5xl font-bold text-gray-900 mb-4">About EatoAI</h1>
+        <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          We’re building the future of food with AI — where every meal is
+          personalized, nutritious, and crafted to fit your lifestyle.
         </p>
       </motion.section>
 
-      {/* 🔸 Story Section */}
+      {/* 🔸 Our Story */}
       <motion.section
         className="py-20 px-4 bg-white relative z-10"
         initial={{ opacity: 0 }}
@@ -95,21 +98,21 @@ const About = () => {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-6">Our Story</h2>
-            <p className="text-lg text-gray-600 mb-6">
-              COOKARO was born from a simple observation: too many people
-              struggle with the question "What should I cook?" every day. With
-              busy schedules and limited ingredients at home, meal planning
-              becomes a daily challenge.
+            <p className="text-lg text-gray-600 mb-5">
+              EatoAI began with one simple goal — to make cooking easy and
+              enjoyable for everyone. We know how stressful it can be to decide
+              what to eat every day, especially with limited time and
+              ingredients.
             </p>
-            <p className="text-lg text-gray-600 mb-6">
-              Our team of food enthusiasts and AI experts came together to
-              create an intelligent solution that understands your preferences,
-              dietary restrictions, and available ingredients to suggest
-              personalized recipes.
+            <p className="text-lg text-gray-600 mb-5">
+              That’s why our team of passionate food lovers and AI engineers
+              built EatoAI — your intelligent kitchen companion that learns your
+              taste, lifestyle, and diet preferences to suggest recipes that fit
+              your goals.
             </p>
             <p className="text-lg text-gray-600">
-              Today, COOKARO helps thousands of home cooks discover new flavors
-              and create memorable meals with confidence.
+              From busy professionals to health enthusiasts, EatoAI helps you
+              cook smarter, eat better, and rediscover the joy of cooking.
             </p>
           </motion.div>
 
@@ -122,7 +125,7 @@ const About = () => {
               <div className="text-center">
                 <ChefHat className="h-24 w-24 text-orange-600 mx-auto mb-4" />
                 <p className="text-2xl font-semibold text-gray-800">
-                  "Cooking made intelligent"
+                  Intelligence in every bite
                 </p>
               </div>
             </div>
@@ -130,7 +133,7 @@ const About = () => {
         </div>
       </motion.section>
 
-      {/* 🔸 Values Section */}
+      {/* 🔸 Our Values */}
       <motion.section
         className="py-20 px-4 relative z-10"
         initial={{ opacity: 0, y: 40 }}
@@ -138,30 +141,28 @@ const About = () => {
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
       >
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Our Values
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              The principles that guide everything we do at COOKARO
-            </p>
-          </div>
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Values</h2>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-12">
+            The principles that guide everything we do at EatoAI
+          </p>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {values.map((value, index) => (
+            {values.map(({ icon: Icon, title, description }, i) => (
               <motion.div
-                key={index}
+                key={i}
                 whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 200 }}
+                transition={{ type: "spring", stiffness: 250 }}
               >
                 <Card className="border-orange-100 shadow-md hover:shadow-orange-200 transition-all duration-300 bg-white/90 backdrop-blur-sm">
                   <CardContent className="p-6 text-center">
-                    <value.icon className="h-12 w-12 text-orange-600 mx-auto mb-4" />
+                    <Icon className="h-12 w-12 text-orange-600 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                      {value.title}
+                      {title}
                     </h3>
-                    <p className="text-gray-600">{value.description}</p>
+                    <p className="text-gray-600 text-sm sm:text-base">
+                      {description}
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -181,7 +182,7 @@ const About = () => {
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8 text-center">
           {[
             ["100+", "Recipes Generated"],
-            ["50+", "Happy Cooks"],
+            ["200+", "Happy Cooks"],
             ["95%", "Satisfaction Rate"],
           ].map(([stat, label], i) => (
             <motion.div
@@ -192,13 +193,13 @@ const About = () => {
               <div className="text-4xl font-bold text-orange-600 mb-2">
                 {stat}
               </div>
-              <div className="text-xl text-gray-600">{label}</div>
+              <div className="text-lg text-gray-600">{label}</div>
             </motion.div>
           ))}
         </div>
       </motion.section>
 
-      {/* 🔸 CTA Section */}
+      {/* 🔸 Call to Action */}
       <motion.section
         className="py-20 px-4 bg-gradient-to-r from-orange-600 to-amber-600 relative z-10"
         initial={{ opacity: 0, y: 40 }}
@@ -211,20 +212,17 @@ const About = () => {
             Ready to Transform Your Cooking?
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            Join our community and start creating amazing recipes with AI today
+            Join our community and start creating amazing recipes with AI today.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/recipe">
-              <Button
-                size="lg"
-                variant="secondary"
-                className="text-lg px-8 py-3 hover:scale-105 transition-all cursor-pointer"
-              >
-                Try COOKARO Now
-              </Button>
-            </Link>
-         
-          </div>
+          <Link href="/recipe">
+            <Button
+              size="lg"
+              variant="secondary"
+              className="text-lg px-8 py-3 hover:scale-105 transition-all cursor-pointer"
+            >
+              Try EatoAI Now
+            </Button>
+          </Link>
         </div>
       </motion.section>
     </div>

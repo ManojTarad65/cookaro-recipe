@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import LoadingScreen from "@/components/LoadingScreen";
-import Login from "@/components/Login"; // your login component
+
 import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
 
@@ -27,6 +27,7 @@ export default function Home() {
 function LoginWrapper() {
     return  (
       <main className="flex flex-col min-h-screen">
+
         <Hero />
         <Footer />
       </main>
