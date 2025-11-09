@@ -140,6 +140,11 @@ export default function Header() {
 
           {profileOpen && (
             <div className="absolute right-0 mt-2 w-40 rounded-lg border bg-white shadow-lg">
+              <Link href="/profile">
+                <button className="w-full px-4 py-2 text-left text-sm hover:bg-orange-50">
+                  Profile
+                </button>
+              </Link>
               <Link href="/history">
                 <button className="w-full px-4 py-2 text-left text-sm hover:bg-orange-50">
                   History

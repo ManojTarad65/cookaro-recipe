@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ import {
 import { toast } from "sonner";
 
 const Profile = () => {
+  const { data: session } = useSession();
   const [user, setUser] = useState<any>(null);
   const [health, setHealth] = useState({
     age: "",
@@ -30,19 +32,24 @@ const Profile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 
-  // Fetch user and health data
+  // ✅ Fetch user and health data from localStorage or NextAuth
   useEffect(() => {
     const userData = localStorage.getItem("user");
+
     if (userData) {
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
       fetchProfile(parsedUser.email);
+    } else if (session?.user) {
+      setUser(session.user);
+      fetchProfile(session.user.email || "");
+      localStorage.setItem("user", JSON.stringify(session.user));
     } else {
-      router.push("/login");
+      router.push("/profile");
     }
-  }, [router]);
+  }, [router, session]);
 
-  // Fetch profile from MongoDB
+  // ✅ Fetch profile from MongoDB
   const fetchProfile = async (email: string) => {
     try {
       const res = await fetch(`/api/profile?email=${email}`);
@@ -56,7 +63,7 @@ const Profile = () => {
     }
   };
 
-  // Save health info
+  // ✅ Save health info
   const handleHealthSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -72,7 +79,6 @@ const Profile = () => {
         toast.success("Health details saved successfully!");
         calculateStats(health);
 
-        // ✅ Save health + calculated stats to localStorage
         localStorage.setItem("profile", JSON.stringify({ ...health, stats }));
       } else {
         toast.error("Failed to save details.");
@@ -84,7 +90,7 @@ const Profile = () => {
     }
   };
 
-  // Calculate BMI, BMR, Calories, Macros
+  // ✅ Calculate BMI, BMR, Calories, Macros
   const calculateStats = (data: any) => {
     const { age, gender, height, weight, activityLevel } = data;
     if (!age || !height || !weight || !activityLevel) return;
@@ -92,7 +98,6 @@ const Profile = () => {
     const heightM = parseFloat(height) / 100;
     const bmi = (parseFloat(weight) / (heightM * heightM)).toFixed(1);
 
-    // BMR Calculation
     let bmr =
       gender === "male"
         ? 10 * weight + 6.25 * height - 5 * age + 5
@@ -106,7 +111,6 @@ const Profile = () => {
 
     const dailyCalories = Math.round(bmr * (activityMap[activityLevel] || 1.2));
 
-    // Macro Distribution
     const proteinCals = dailyCalories * 0.25;
     const carbCals = dailyCalories * 0.5;
     const fatCals = dailyCalories * 0.25;
@@ -122,13 +126,13 @@ const Profile = () => {
 
     setStats(calculatedStats);
 
-    // ✅ Also store stats to localStorage for reuse
     localStorage.setItem(
       "profile",
       JSON.stringify({ ...data, ...calculatedStats })
     );
   };
 
+  // ✅ Logout
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("recipeHistory");
@@ -137,10 +141,14 @@ const Profile = () => {
     router.push("/login");
   };
 
+  // ✅ Loading state
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 text-lg font-medium text-gray-600">
-        Loading profile...
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 text-center">
+        <div className="animate-spin border-4 border-orange-400 border-t-transparent rounded-full h-12 w-12 mb-4"></div>
+        <p className="text-gray-600 text-lg font-medium">
+          Loading your profile...
+        </p>
       </div>
     );
   }
@@ -148,7 +156,17 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
       <div className="max-w-5xl mx-auto py-20 px-4 space-y-8">
-        {/* Health Info Form */}
+        {/* 🔸 Greeting Section */}
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold text-gray-800">
+            Hey {user?.name?.split(" ")[0]} 👋
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Welcome back! Here’s your health summary and profile details.
+          </p>
+        </div>
+
+        {/* 🔹 Health Info Form */}
         <Card className="animate-scale-in">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -191,7 +209,7 @@ const Profile = () => {
           </CardContent>
         </Card>
 
-        {/* Smart Stats Card */}
+        {/* 🔹 Smart Stats Section */}
         {stats && (
           <Card className="animate-scale-in">
             <CardHeader>
@@ -201,35 +219,24 @@ const Profile = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="grid md:grid-cols-3 gap-6 text-gray-700">
-              <div>
-                <h4 className="font-semibold">BMI</h4>
-                <p>{stats.bmi}</p>
-              </div>
-              <div>
-                <h4 className="font-semibold">BMR</h4>
-                <p>{stats.bmr} kcal/day</p>
-              </div>
-              <div>
-                <h4 className="font-semibold">Calories Needed</h4>
-                <p>{stats.dailyCalories} kcal/day</p>
-              </div>
-              <div>
-                <h4 className="font-semibold">Protein</h4>
-                <p>{stats.protein} g/day</p>
-              </div>
-              <div>
-                <h4 className="font-semibold">Carbs</h4>
-                <p>{stats.carbs} g/day</p>
-              </div>
-              <div>
-                <h4 className="font-semibold">Fats</h4>
-                <p>{stats.fats} g/day</p>
-              </div>
+              {[
+                ["BMI", stats.bmi],
+                ["BMR", `${stats.bmr} kcal/day`],
+                ["Calories Needed", `${stats.dailyCalories} kcal/day`],
+                ["Protein", `${stats.protein} g/day`],
+                ["Carbs", `${stats.carbs} g/day`],
+                ["Fats", `${stats.fats} g/day`],
+              ].map(([label, value], i) => (
+                <div key={i}>
+                  <h4 className="font-semibold">{label}</h4>
+                  <p>{value}</p>
+                </div>
+              ))}
             </CardContent>
           </Card>
         )}
 
-        {/* Basic Profile Info */}
+        {/* 🔹 Basic Profile Info */}
         <Card className="animate-scale-in">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -249,7 +256,7 @@ const Profile = () => {
                 />
               </div>
             </div>
-            <div className="flex gap-4 pt-4">
+            <div className="flex gap-4 pt-4 flex-col sm:flex-row">
               <Link href="/history" className="flex-1">
                 <Button variant="outline" className="w-full">
                   <History className="h-4 w-4 mr-2" />
