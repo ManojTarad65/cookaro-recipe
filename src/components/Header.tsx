@@ -5,33 +5,22 @@ import { useState } from "react";
 import { ChefHat, Sun, Moon, Bell, Menu, X } from "lucide-react";
 import Link from "next/link";
 
-interface Notification {
-  id: number;
-  message: string;
-  time: string;
-}
+import { useNotification } from "@/context/NotificationContext"; // ✅ import context
 
 export default function Header() {
   const { data: session } = useSession();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Example notifications
-  const notifications: Notification[] = [
-    { id: 1, message: "New Italian recipe added 🍝", time: "2h ago" },
-    { id: 2, message: "Don't forget your lunch plan 🥗", time: "5h ago" },
-    { id: 3, message: "Protein intake low today ⚡", time: "1d ago" },
-  ];
+  // ✅ Safely access notifications from context
+  const { notifications } = useNotification();
 
   if (!session) return null;
+
   const firstName = session.user?.name?.split(" ")[0];
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle("dark");
-  };
+
 
   return (
     <header className="flex items-center justify-between bg-card px-4 md:px-6 py-3 shadow-md sticky top-0 z-50">
@@ -44,7 +33,7 @@ export default function Header() {
         <span className="text-lg md:text-xl font-bold">EatoAI</span>
       </Link>
 
-      {/* Desktop Nav */}
+      {/* Desktop Navigation */}
       <nav className="hidden md:flex items-center gap-6 relative">
         <Link href="/" className="text-sm font-medium hover:text-orange-600">
           Home
@@ -80,49 +69,49 @@ export default function Header() {
           Contact
         </Link>
 
-        {/* Dark/Light Toggle */}
-        <button
-          onClick={toggleDarkMode}
-          className="p-2 rounded-full hover:bg-primary/10"
-        >
-          {darkMode ? (
-            <Sun className="h-5 w-5 cursor-pointer" />
-          ) : (
-            <Moon className="h-5 w-5 cursor-pointer" />
-          )}
-        </button>
+      
 
-        {/* Notifications */}
+        {/* 🔔 Notifications */}
         <div className="relative">
           <button
             onClick={() => setNotifOpen(!notifOpen)}
             className="p-2 rounded-full hover:bg-primary/10 relative"
           >
             <Bell className="h-5 w-5 cursor-pointer" />
-            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
+            {notifications.length > 0 && (
+              <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></span>
+            )}
           </button>
 
           {notifOpen && (
-            <div className="absolute right-0 mt-2 w-72 rounded-lg border bg-white shadow-lg overflow-hidden">
-              <h3 className="px-4 py-2 text-sm font-semibold border-b">
-                Notifications
-              </h3>
+            <div className="absolute right-0 mt-2 w-72 rounded-lg border bg-white shadow-lg overflow-hidden z-50">
+              <div className="flex justify-between items-center px-4 py-2 border-b">
+                <h3 className="text-sm font-semibold">Notifications</h3>
+              </div>
               <div className="max-h-64 overflow-y-auto divide-y">
-                {notifications.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className="px-4 py-2 text-sm hover:bg-orange-50"
-                  >
-                    <p>{notif.message}</p>
-                    <span className="text-xs text-gray-500">{notif.time}</span>
-                  </div>
-                ))}
+                {notifications.length > 0 ? (
+                  notifications.map((notif) => (
+                    <div
+                      key={notif.id}
+                      className="px-4 py-2 text-sm hover:bg-orange-50"
+                    >
+                      <p>{notif.message}</p>
+                      <span className="text-xs text-gray-500">
+                        {notif.time}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="px-4 py-3 text-sm text-gray-500 text-center">
+                    No new notifications
+                  </p>
+                )}
               </div>
             </div>
           )}
         </div>
 
-        {/* Profile Dropdown */}
+        {/* 👤 Profile Dropdown */}
         <div className="relative">
           <button
             onClick={() => setProfileOpen(!profileOpen)}
@@ -161,7 +150,7 @@ export default function Header() {
         </div>
       </nav>
 
-      {/* Mobile Menu Button */}
+      {/* 📱 Mobile Menu */}
       <button
         className="md:hidden p-2 rounded-md hover:bg-orange-100"
         onClick={() => setMenuOpen(!menuOpen)}
@@ -173,37 +162,24 @@ export default function Header() {
         )}
       </button>
 
-      {/* Mobile Menu Dropdown */}
       {menuOpen && (
         <div className="absolute top-16 left-0 w-full bg-white shadow-md border-t z-40 flex flex-col items-center space-y-3 py-6">
-          {[
-            "Home",
-            "Nutrition",
-            "About",
-            "Today",
-            "Chat with EatoAI",
-            "Contact",
-          ].map((item, index) => (
-            <Link
-              key={index}
-              href={`/${item.toLowerCase().replace(/ /g, "")}`}
-              onClick={() => setMenuOpen(false)}
-              className="text-sm font-medium text-gray-800 hover:text-orange-600 transition-colors"
-            >
-              {item}
-            </Link>
-          ))}
+          {["Nutrition", "About", "Today", "Chat", "Contact"].map(
+            (item, index) => (
+              <Link
+                key={index}
+                href={`/${item.toLowerCase().replace(/ /g, "")}`}
+                onClick={() => setMenuOpen(false)}
+                className="text-sm font-medium text-gray-800 hover:text-orange-600 transition-colors"
+              >
+                {item}
+              </Link>
+            )
+          )}
           <div className="flex items-center gap-3 mt-2">
-            <button onClick={toggleDarkMode}>
-              {darkMode ? (
-                <Sun className="h-5 w-5 text-orange-600" />
-              ) : (
-                <Moon className="h-5 w-5 text-gray-600" />
-              )}
-            </button>
             <Bell
               className="h-5 w-5 text-gray-700 cursor-pointer"
-              onClick={() => alert("Notifications coming soon!")}
+              onClick={() => setNotifOpen(!notifOpen)}
             />
           </div>
         </div>

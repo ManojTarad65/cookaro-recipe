@@ -1,10 +1,10 @@
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useNotification } from "@/context/NotificationContext";
 import { Trash2, Search, Loader2, Copy } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -51,16 +51,12 @@ const HistoryPage = () => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [macroData, setMacroData] = useState<any[]>([]);
 
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (!userData) return;
+  const { addHistoryListener, removeHistoryListener } = useNotification();
 
-    const { email } = JSON.parse(userData);
-    fetchHistory(email);
-  }, []);
-
-  const fetchHistory = async (email: string) => {
+  // ✅ Fetch data initially
+  const fetchHistory = useCallback(async (email: string) => {
     try {
+      setLoading(true);
       const res = await axios.get(`/api/meal-history?email=${email}`);
       const data = res.data;
       setHistory(data);
@@ -72,9 +68,26 @@ const HistoryPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // 🔍 Filter by search term
+  // ✅ Fetch on mount
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (!userData) return;
+    const { email } = JSON.parse(userData);
+    fetchHistory(email);
+
+    // ✅ Listen for recipe save updates
+    const refreshHistory = () => {
+      fetchHistory(email);
+      toast.success("🔄 History updated — new recipe added!");
+    };
+
+    addHistoryListener(refreshHistory);
+    return () => removeHistoryListener(refreshHistory);
+  }, [fetchHistory, addHistoryListener, removeHistoryListener]);
+
+  // 🔍 Filter history by search term
   useEffect(() => {
     const filtered = history.filter(
       (item) =>
@@ -89,7 +102,6 @@ const HistoryPage = () => {
   const generateCharts = (data: HistoryItem[]) => {
     if (!data || data.length === 0) return;
 
-    // Calories trend per day
     const caloriesByDay: Record<string, number> = {};
     let totalProtein = 0,
       totalCarbs = 0,
@@ -121,7 +133,7 @@ const HistoryPage = () => {
     setMacroData(macroTotals);
   };
 
-  // 🗑 Delete
+  // 🗑 Delete History Item
   const handleDelete = async (id?: string) => {
     if (!id) return;
     try {
@@ -135,7 +147,7 @@ const HistoryPage = () => {
     }
   };
 
-  // 📋 Copy
+  // 📋 Copy Recipe/Nutrition Info
   const handleCopy = (item: HistoryItem) => {
     let text = "";
     if (item.recipe) {
@@ -153,7 +165,6 @@ Carbs: ${item.nutrition.carbs}g
 Fat: ${item.nutrition.fat}g
       `;
     }
-
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard!");
   };
@@ -164,19 +175,18 @@ Fat: ${item.nutrition.fat}g
         <h1 className="text-4xl font-bold text-gray-900 mb-6 text-center">
           🥗 Your Health Dashboard
         </h1>
+
         {/* 🔥 Progress Summary Section */}
         {history.length > 0 && (
-          <Card className="mb-10 shadow-md border border-orange-100">
+          <Card className="mb-10 shadow-md border border-orange-100 animate-fade-in">
             <CardContent className="p-6 space-y-4">
               <h2 className="text-2xl font-semibold text-gray-800 mb-3 text-center">
                 📊 Today's Progress Summary
               </h2>
 
-              {/* Fetch user's profile data */}
               {(() => {
                 const userData = localStorage.getItem("user");
                 if (!userData) return null;
-                const email = JSON.parse(userData).email;
                 const todayMeals = history.filter((item) => {
                   const date = new Date(item.timestamp).toLocaleDateString();
                   const today = new Date().toLocaleDateString();
@@ -207,7 +217,6 @@ Fat: ${item.nutrition.fat}g
                   0
                 );
 
-                // Fetch profile data from localStorage cache
                 const profileData = JSON.parse(
                   localStorage.getItem("profile") || "{}"
                 );
@@ -235,7 +244,6 @@ Fat: ${item.nutrition.fat}g
 
                 return (
                   <div className="space-y-6">
-                    {/* Calories */}
                     <div>
                       <p className="text-lg font-medium text-gray-700 mb-1">
                         🔥 Calories: {totalCalories} / {goalCalories} kcal
@@ -251,8 +259,6 @@ Fat: ${item.nutrition.fat}g
                         ></div>
                       </div>
                     </div>
-
-                    {/* Protein */}
                     <div>
                       <p className="text-lg font-medium text-gray-700 mb-1">
                         💪 Protein: {totalProtein}g / {Math.round(goalProtein)}g
@@ -264,8 +270,6 @@ Fat: ${item.nutrition.fat}g
                         ></div>
                       </div>
                     </div>
-
-                    {/* Carbs */}
                     <div>
                       <p className="text-lg font-medium text-gray-700 mb-1">
                         🍞 Carbs: {totalCarbs}g / {Math.round(goalCarbs)}g
@@ -277,8 +281,6 @@ Fat: ${item.nutrition.fat}g
                         ></div>
                       </div>
                     </div>
-
-                    {/* Fats */}
                     <div>
                       <p className="text-lg font-medium text-gray-700 mb-1">
                         🥑 Fats: {totalFat}g / {Math.round(goalFat)}g
@@ -290,25 +292,6 @@ Fat: ${item.nutrition.fat}g
                         ></div>
                       </div>
                     </div>
-
-                    {/* Motivation message */}
-                    <div className="text-center mt-4">
-                      {totalCalories < goalCalories * 0.9 ? (
-                        <p className="text-green-600 font-semibold">
-                          ✅ You're doing great! Keep fueling your body 💪
-                        </p>
-                      ) : totalCalories > goalCalories ? (
-                        <p className="text-red-500 font-semibold">
-                          ⚠️ You’ve gone over your calorie goal today. Balance
-                          it tomorrow!
-                        </p>
-                      ) : (
-                        <p className="text-orange-500 font-semibold">
-                          💡 Almost there — just a bit more to reach your daily
-                          goal!
-                        </p>
-                      )}
-                    </div>
                   </div>
                 );
               })()}
@@ -316,7 +299,7 @@ Fat: ${item.nutrition.fat}g
           </Card>
         )}
 
-        {/* Search */}
+        {/* Search Bar */}
         <div className="flex gap-4 mb-6">
           <Input
             placeholder="Search your meals or recipes..."
@@ -335,13 +318,12 @@ Fat: ${item.nutrition.fat}g
           </div>
         ) : filteredHistory.length === 0 ? (
           <p className="text-center text-gray-600">
-            No history available yet. Analyze your first meal to get insights!
+            No history available yet. Generate your first recipe to see it here!
           </p>
         ) : (
           <>
             {/* Charts Section */}
             <div className="grid md:grid-cols-2 gap-8">
-              {/* Calories Trend */}
               <Card className="shadow-lg border border-orange-100">
                 <CardContent className="p-4">
                   <h2 className="text-lg font-semibold mb-3 text-gray-800">
@@ -366,7 +348,6 @@ Fat: ${item.nutrition.fat}g
                 </CardContent>
               </Card>
 
-              {/* Macro Pie Chart */}
               <Card className="shadow-lg border border-orange-100">
                 <CardContent className="p-4">
                   <h2 className="text-lg font-semibold mb-3 text-gray-800">
@@ -399,7 +380,7 @@ Fat: ${item.nutrition.fat}g
               {filteredHistory.map((item) => (
                 <Card
                   key={item._id}
-                  className="hover:shadow-lg transition-all duration-300 border-orange-100"
+                  className="hover:shadow-xl transition-all duration-300 border-orange-100"
                 >
                   <CardContent>
                     <div className="flex justify-between items-start">

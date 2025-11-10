@@ -17,6 +17,7 @@ import {
   Calculator,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useNotification } from "@/context/NotificationContext"; // ✅ Import notification context
 
 const Profile = () => {
   const { data: session } = useSession();
@@ -31,6 +32,7 @@ const Profile = () => {
   const [stats, setStats] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
+  const { addNotification } = useNotification(); // ✅ Use notifications
 
   // ✅ Fetch user and health data from localStorage or NextAuth
   useEffect(() => {
@@ -40,12 +42,14 @@ const Profile = () => {
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
       fetchProfile(parsedUser.email);
+      addNotification("Welcome back! Profile loaded successfully 👋"); // ✅ Notify on load
     } else if (session?.user) {
       setUser(session.user);
       fetchProfile(session.user.email || "");
       localStorage.setItem("user", JSON.stringify(session.user));
+      addNotification("Profile synced with your account ✅");
     } else {
-      router.push("/profile");
+      router.push("/login");
     }
   }, [router, session]);
 
@@ -60,6 +64,7 @@ const Profile = () => {
       }
     } catch (error) {
       console.error(error);
+      addNotification("Error fetching profile data ⚠️");
     }
   };
 
@@ -80,11 +85,14 @@ const Profile = () => {
         calculateStats(health);
 
         localStorage.setItem("profile", JSON.stringify({ ...health, stats }));
+        addNotification("Health details updated successfully 💪"); // ✅ Notify save success
       } else {
         toast.error("Failed to save details.");
+        addNotification("Failed to save health details ❌");
       }
     } catch (err) {
       toast.error("Error saving data.");
+      addNotification("Error while saving health data ⚠️");
     } finally {
       setIsSaving(false);
     }
@@ -130,6 +138,8 @@ const Profile = () => {
       "profile",
       JSON.stringify({ ...data, ...calculatedStats })
     );
+
+    addNotification("Your health stats were recalculated 🧮"); // ✅ Notify recalculation
   };
 
   // ✅ Logout
@@ -138,6 +148,7 @@ const Profile = () => {
     localStorage.removeItem("recipeHistory");
     localStorage.removeItem("profile");
     toast.success("Logged out successfully!");
+    addNotification("You’ve logged out successfully 👋"); // ✅ Notify logout
     router.push("/login");
   };
 

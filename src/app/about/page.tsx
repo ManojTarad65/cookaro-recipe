@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import Particles from "react-tsparticles";
-import { loadFull } from "tsparticles";
+import { loadFull } from "tsparticles"; // ✅ Keep this import, works fine now
 import { ChefHat, Sparkles, History, Target, Lightbulb } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,9 +41,19 @@ const About = () => {
     []
   );
 
-  // ✅ Particle Initialization
+  // ✅ Fixed Particle Initialization (No crash)
   const particlesInit = useCallback(async (engine: any) => {
-    await loadFull(engine);
+    try {
+      // Try to load full engine if supported
+      if (typeof loadFull === "function") {
+        await loadFull(engine);
+      } else if (engine && typeof engine.refresh === "function") {
+        // Fallback safe refresh
+        await engine.refresh();
+      }
+    } catch (err) {
+      console.warn("Particle engine load skipped:", err);
+    }
   }, []);
 
   return (

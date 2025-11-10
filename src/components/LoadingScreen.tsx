@@ -112,10 +112,10 @@ const LoadingScreen = ({ onComplete }: LoadingScreenProps) => {
         {/* Title */}
         <div className="mb-8">
           <h1 className="text-6xl font-bold text-white mb-2 animate-pulse">
-            COOKARO
+            EatoAI
           </h1>
           <p className="text-white/90 text-xl animate-fade-in">
-            Your AI Cooking Companion
+            Your AI Health & Recipe Assistant
           </p>
         </div>
 

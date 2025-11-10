@@ -5,20 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Send, Bot, User } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNotification } from "@/context/NotificationContext"; // ✅ Import notification context
 
 // ✅ Helper function for formatting text
 function formatText(text: string) {
   if (!text) return "";
   return text
-    .replace(/\*\*(.*?)\*\*/g, "<strong class='text-orange-600'>$1</strong>") // Bold
+    .replace(/\*\*(.*?)\*\*/g, "<strong class='text-orange-600'>$1</strong>")
     .replace(
       /### (.*?)(\n|$)/g,
       "<h3 class='text-lg font-semibold mt-2'>$1</h3>"
-    ) // Header
-    .replace(/\* (.*?)(\n|$)/g, "• $1<br>") // Bullet points
-    .replace(/---/g, "<hr class='my-2 border-gray-300' />") // Divider
-    .replace(/\n/g, "<br>") // Line breaks
-    .replace(/```[\s\S]*?```/g, "") // Remove code blocks
+    )
+    .replace(/\* (.*?)(\n|$)/g, "• $1<br>")
+    .replace(/---/g, "<hr class='my-2 border-gray-300' />")
+    .replace(/\n/g, "<br>")
+    .replace(/```[\s\S]*?```/g, "")
     .trim();
 }
 
@@ -33,6 +34,8 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
+  const { addNotification } = useNotification(); // ✅ Use notifications
+
   // Scroll to bottom when new messages appear
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -43,6 +46,8 @@ export default function ChatPage() {
 
     const newMsg = { role: "user", text: input };
     setMessages((prev) => [...prev, newMsg]);
+    addNotification("You asked something to EatoAI 💬"); // ✅ Notify user sent message
+
     setInput("");
     setLoading(true);
 
@@ -62,11 +67,13 @@ export default function ChatPage() {
       };
 
       setMessages((prev) => [...prev, botReply]);
+      addNotification("EatoAI replied with a suggestion 🤖"); // ✅ Notify AI response
     } catch (error) {
       setMessages((prev) => [
         ...prev,
         { role: "bot", text: "⚠️ Unable to connect. Please try again." },
       ]);
+      addNotification("Connection error while chatting ⚠️"); // ✅ Notify network issue
     } finally {
       setLoading(false);
     }
@@ -100,9 +107,7 @@ export default function ChatPage() {
                     ? "bg-orange-600 text-white rounded-br-none"
                     : "bg-gray-100 text-gray-900 rounded-bl-none"
                 }`}
-                dangerouslySetInnerHTML={{
-                  __html: formatText(msg.text),
-                }}
+                dangerouslySetInnerHTML={{ __html: formatText(msg.text) }}
               ></div>
               {msg.role === "user" && (
                 <User className="w-6 h-6 text-gray-600 shrink-0" />

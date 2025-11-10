@@ -1,8 +1,7 @@
-
 "use client";
 
 import { motion } from "framer-motion";
-import { Mail, Phone, MapPin, Send, ChefHat } from "lucide-react";
+import { Mail, Phone, MapPin, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,8 +12,17 @@ import { toast } from "sonner";
 import Footer from "@/components/Footer";
 
 export default function Contact() {
+  // ✅ Safe particle initialization (fixes engine.checkVersion error)
   const particlesInit = useCallback(async (engine: any) => {
-    await loadFull(engine);
+    try {
+      if (typeof loadFull === "function") {
+        await loadFull(engine);
+      } else if (engine && typeof engine.refresh === "function") {
+        await engine.refresh();
+      }
+    } catch (err) {
+      console.warn("Particles engine load skipped:", err);
+    }
   }, []);
 
   // Form State
@@ -36,7 +44,7 @@ export default function Contact() {
 
       const data = await res.json();
       if (res.ok) {
-        toast.success(data.message);
+        toast.success(data.message || "Message sent successfully!");
         setName("");
         setEmail("");
         setMessage("");
@@ -70,6 +78,7 @@ export default function Contact() {
         className="absolute inset-0 z-0"
       />
 
+      {/* Contact Section */}
       <motion.section
         className="relative z-10 max-w-6xl mx-auto px-6 py-24"
         initial={{ opacity: 0, y: 40 }}
@@ -180,9 +189,8 @@ export default function Contact() {
         </div>
       </motion.section>
 
-      {/* Footer CTA */}
+      {/* Footer */}
       <Footer />
-     
     </div>
   );
 }
