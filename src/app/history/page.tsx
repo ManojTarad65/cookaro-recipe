@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useNotification } from "@/context/NotificationContext";
+
 import { Trash2, Search, Loader2, Copy } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -51,7 +51,6 @@ const HistoryPage = () => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [macroData, setMacroData] = useState<any[]>([]);
 
-  const { addHistoryListener, removeHistoryListener } = useNotification();
 
   // ✅ Fetch data initially
   const fetchHistory = useCallback(async (email: string) => {
@@ -83,9 +82,8 @@ const HistoryPage = () => {
       toast.success("🔄 History updated — new recipe added!");
     };
 
-    addHistoryListener(refreshHistory);
-    return () => removeHistoryListener(refreshHistory);
-  }, [fetchHistory, addHistoryListener, removeHistoryListener]);
+
+  }, [fetchHistory]);
 
   // 🔍 Filter history by search term
   useEffect(() => {

@@ -11,25 +11,27 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
 
-export default function Contact() {
-  // ✅ Safe particle initialization (fixes engine.checkVersion error)
+export default function ContactClient() {
   const particlesInit = useCallback(async (engine: any) => {
     try {
-      if (typeof loadFull === "function") {
-        await loadFull(engine);
-      } else if (engine && typeof engine.refresh === "function") {
-        await engine.refresh();
-      }
+      await loadFull(engine);
     } catch (err) {
-      console.warn("Particles engine load skipped:", err);
+      console.warn("Particles skipped:", err);
     }
   }, []);
 
-  // Form State
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
   const [loading, setLoading] = useState(false);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,28 +41,26 @@ export default function Contact() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify(form),
       });
 
       const data = await res.json();
       if (res.ok) {
         toast.success(data.message || "Message sent successfully!");
-        setName("");
-        setEmail("");
-        setMessage("");
+        setForm({ name: "", email: "", message: "" });
       } else {
-        toast.error(data.error || "Failed to send message");
+        toast.error(data.error || "Failed to send message.");
       }
     } catch (err) {
-      toast.error("Failed to send message");
+      toast.error("Something went wrong!");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-white">
-      {/* Background Particles */}
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] text-white">
+      {/* 🌌 Background Particles */}
       <Particles
         id="tsparticles"
         init={particlesInit}
@@ -68,17 +68,17 @@ export default function Contact() {
           background: { color: "transparent" },
           fpsLimit: 60,
           particles: {
-            number: { value: 25 },
-            color: { value: "#f97316" },
+            number: { value: 30 },
+            color: { value: "#f59e0b" },
             opacity: { value: 0.25 },
             size: { value: 3 },
-            move: { enable: true, speed: 0.8, random: true },
+            move: { enable: true, speed: 1, random: true },
           },
         }}
         className="absolute inset-0 z-0"
       />
 
-      {/* Contact Section */}
+      {/* ✉️ Contact Section */}
       <motion.section
         className="relative z-10 max-w-6xl mx-auto px-6 py-24"
         initial={{ opacity: 0, y: 40 }}
@@ -86,110 +86,117 @@ export default function Contact() {
         transition={{ duration: 0.8 }}
       >
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Get in Touch
+          <h1 className="text-5xl font-bold text-orange-400 mb-4">
+            Contact Us
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Have any questions, suggestions, or partnership ideas? We’d love to
-            hear from you!
+          <p className="text-lg text-white/80 max-w-2xl mx-auto">
+            Have questions, ideas, or feedback? We’d love to connect with you
+            and hear your thoughts!
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-12">
-          {/* Contact Info Section */}
+          {/* 📞 Contact Info */}
           <motion.div
             className="space-y-8"
-            initial={{ x: -50, opacity: 0 }}
+            initial={{ x: -60, opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="flex items-center gap-4">
-              <div className="bg-orange-100 p-4 rounded-xl">
-                <Mail className="text-orange-600 h-6 w-6" />
+            {[
+              {
+                icon: Mail,
+                title: "Email",
+                text: "manojtarad65@gmail.com",
+              },
+              {
+                icon: Phone,
+                title: "Phone",
+                text: "+91 7877018453",
+              },
+              {
+                icon: MapPin,
+                title: "Office",
+                text: "Bikaner, Rajasthan, India",
+              },
+            ].map(({ icon: Icon, title, text }, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-4 bg-white/10 border border-orange-400/20 p-4 rounded-xl backdrop-blur-sm hover:scale-105 transition-all duration-300"
+              >
+                <div className="bg-orange-400/20 p-4 rounded-xl">
+                  <Icon className="text-orange-400 h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">{title}</h3>
+                  <p className="text-white/70">{text}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Email</h3>
-                <p className="text-gray-600">manojtarad65@gmail.com</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="bg-orange-100 p-4 rounded-xl">
-                <Phone className="text-orange-600 h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Phone</h3>
-                <p className="text-gray-600">+91 7877018453</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="bg-orange-100 p-4 rounded-xl">
-                <MapPin className="text-orange-600 h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Office</h3>
-                <p className="text-gray-600">Bikaner, Rajasthan, India</p>
-              </div>
-            </div>
+            ))}
           </motion.div>
 
-          {/* Contact Form */}
+          {/* 📝 Contact Form */}
           <motion.form
-            className="bg-white p-8 rounded-2xl shadow-lg border border-orange-100 space-y-6 backdrop-blur-sm"
-            initial={{ x: 50, opacity: 0 }}
+            className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-lg border border-orange-400/20 space-y-6"
+            initial={{ x: 60, opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.6 }}
             onSubmit={handleSubmit}
           >
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-2">
+              <label className="block text-sm font-semibold text-white mb-2">
                 Full Name
               </label>
               <Input
+                name="name"
                 placeholder="Enter your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="focus:ring-2 focus:ring-orange-400"
+                value={form.name}
+                onChange={handleChange}
+                className="bg-gray-900/60 text-white border-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-orange-400"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-2">
+              <label className="block text-sm font-semibold text-white mb-2">
                 Email Address
               </label>
               <Input
+                name="email"
                 placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="focus:ring-2 focus:ring-orange-400"
+                value={form.email}
+                onChange={handleChange}
+                className="bg-gray-900/60 text-white border-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-orange-400"
               />
             </div>
+
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-2">
+              <label className="block text-sm font-semibold text-white mb-2">
                 Message
               </label>
               <Textarea
+                name="message"
                 placeholder="Write your message here..."
                 rows={5}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="focus:ring-2 focus:ring-orange-400"
+                value={form.message}
+                onChange={handleChange}
+                className="bg-gray-900/60 text-white border-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-orange-400"
               />
             </div>
+
             <Button
               size="lg"
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white text-lg flex items-center justify-center gap-2"
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white text-lg flex items-center justify-center gap-2 transition-all duration-300"
               type="submit"
               disabled={loading}
             >
-              <Send className="h-5 w-5" />{" "}
+              <Send className="h-5 w-5" />
               {loading ? "Sending..." : "Send Message"}
             </Button>
           </motion.form>
         </div>
       </motion.section>
 
-      {/* Footer */}
+      {/* 🌒 Footer */}
       <Footer />
     </div>
   );

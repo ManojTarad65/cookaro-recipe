@@ -3,8 +3,8 @@
 import dynamic from "next/dynamic";
 import { useSession, signIn } from "next-auth/react";
 import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 
-// Load tsparticles dynamically to avoid SSR errors
 const Particles = dynamic(() => import("react-tsparticles"), { ssr: false });
 
 export default function LoginPage() {
@@ -28,16 +28,12 @@ export default function LoginPage() {
       shape: { type: "circle" },
       opacity: { value: { min: 0.3, max: 0.7 } },
       size: { value: { min: 2, max: 5 } },
-      move: {
-        enable: true,
-        speed: 0.6,
-        outModes: "out" as const, // Using const assertion to specify the literal type
-      },
+      move: { enable: true, speed: 0.6, outModes: "out" as const },
       links: {
         enable: true,
         color: "#ffaa33",
         distance: 130,
-        opacity: 0.2,
+        opacity: 0.25,
         width: 1,
       },
     },
@@ -71,8 +67,9 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-white mb-1">
           Welcome, {session.user?.name?.split(" ")[0]}!
         </h1>
-        <p className="text-sm text-white mb-6">
-          Ready to cook something delicious today?
+        <p className="text-sm text-white/80 mb-6 text-center">
+          Great to see you again 👋 <br />
+          Ready to explore new recipes and smart meal plans today?
         </p>
 
         <motion.button
@@ -90,6 +87,7 @@ export default function LoginPage() {
     <div className="flex flex-col items-center justify-center h-screen relative overflow-hidden bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#0a0a0a] text-white">
       <Particles init={particlesInit} options={particlesOptions} />
 
+      {/* Branding Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -97,13 +95,14 @@ export default function LoginPage() {
         className="text-center mb-12"
       >
         <h1 className="text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300 drop-shadow-lg">
-          Cookaro 🍳
+          EatoAI 🍳
         </h1>
         <p className="mt-3 text-lg text-gray-300 font-light">
           Your AI Cooking Companion
         </p>
       </motion.div>
 
+      {/* Sign In Button */}
       <motion.button
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -119,8 +118,46 @@ export default function LoginPage() {
         <span>Sign in with Google</span>
       </motion.button>
 
+      {/* Learn More Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="mt-16 max-w-lg text-center px-6"
+      >
+        <h2 className="text-2xl font-bold mb-4 text-orange-400">
+          Why EatoAI?
+        </h2>
+        <p className="text-gray-400 leading-relaxed text-sm">
+          EatoAI is an AI-powered cooking assistant that helps you discover
+          recipes based on ingredients, nutrition goals, and your preferences.
+          Whether you want high-protein meals, calorie-conscious dishes, or
+          simply inspiration — EatoAI’s got you covered.
+        </p>
+
+        <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+          <motion.a
+            href="/about"
+            whileHover={{ scale: 1.05 }}
+            className="flex items-center justify-center gap-2 px-6 py-2 border border-orange-500 rounded-xl text-orange-400 hover:bg-orange-500/10 transition"
+          >
+            Learn More <ArrowRight className="w-4 h-4" />
+          </motion.a>
+
+          <motion.a
+            href="/contact"
+            whileHover={{ scale: 1.05 }}
+            className="flex items-center justify-center gap-2 px-6 py-2 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-xl text-white hover:shadow-md transition"
+          >
+            Contact Us <ArrowRight className="w-4 h-4" />
+          </motion.a>
+        </div>
+      </motion.div>
+
+      {/* Footer */}
       <p className="absolute bottom-6 text-sm text-gray-500">
-        © 2025 Cookaro — Crafted with ❤️ by Manoj
+        © 2025 EatoAI — Crafted with ❤️ by{" "}
+        <span className="text-orange-400 font-semibold">Manoj Tarad</span>
       </p>
     </div>
   );

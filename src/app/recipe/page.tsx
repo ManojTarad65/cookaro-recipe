@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
+import Head from "next/head";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, ChefHat, Loader2, X, Copy } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-
 import { toast } from "sonner";
-import { useNotification } from "@/context/NotificationContext"; // ✅ Notification system
+import Header from "@/components/Header";
 
 /* ----------------------- Types ----------------------- */
 interface Recipe {
@@ -40,7 +40,6 @@ const normalize = (s: string) =>
     .filter(Boolean)
     .join(" ")
     .trim();
-const { addNotification, onHistoryUpdate } = useNotification();
 
 const buildIngredientsFromMeal = (meal: any): string[] => {
   const ingredients: string[] = [];
@@ -53,23 +52,28 @@ const buildIngredientsFromMeal = (meal: any): string[] => {
   return ingredients;
 };
 
-const splitInstructions = (text?: string): string[] => {
-  if (!text) return [];
-  return text
-    .split(/\r\n|\n{1,}|\.\s+/)
-    .map((p) => p.trim())
-    .filter(Boolean);
-};
+const splitInstructions = (text?: string): string[] =>
+  text
+    ? text
+        .split(/\r\n|\n{1,}|\.\s+/)
+        .map((p) => p.trim())
+        .filter(Boolean)
+    : [];
 
-/* ----------------------- API Search Functions ----------------------- */
+async function fetchAPI(url: string) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch");
+  return res.json();
+}
+
+/* ----------------------- API Functions ----------------------- */
 const searchByName = async (q: string, topN = 3): Promise<Recipe[]> => {
   try {
-    const res = await fetch(
+    const data = await fetchAPI(
       `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(
         q
       )}`
     );
-    const data = await res.json();
     const meals = data?.meals ?? [];
     return meals.slice(0, topN).map((meal: any) => ({
       idMeal: meal.idMeal,
@@ -81,6 +85,43 @@ const searchByName = async (q: string, topN = 3): Promise<Recipe[]> => {
       instructions: splitInstructions(meal.strInstructions),
       cookTime: "30-45 mins",
     }));
+  } catch {
+    return [];
+  }
+};
+
+const searchByCategory = async (
+  category: string,
+  topN = 3
+): Promise<Recipe[]> => {
+  try {
+    const data = await fetchAPI(
+      `https://www.themealdb.com/api/json/v1/1/filter.php?c=${encodeURIComponent(
+        category
+      )}`
+    );
+    const meals = data?.meals ?? [];
+    const details = await Promise.all(
+      meals.slice(0, topN * 2).map(async (m: any) => {
+        const d = await fetchAPI(
+          `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${m.idMeal}`
+        );
+        return d?.meals?.[0] ?? null;
+      })
+    );
+    return details
+      .filter(Boolean)
+      .slice(0, topN)
+      .map((meal: any) => ({
+        idMeal: meal.idMeal,
+        title: meal.strMeal,
+        image: meal.strMealThumb,
+        category: meal.strCategory,
+        area: meal.strArea,
+        ingredients: buildIngredientsFromMeal(meal),
+        instructions: splitInstructions(meal.strInstructions),
+        cookTime: "30-45 mins",
+      }));
   } catch {
     return [];
   }
@@ -99,28 +140,20 @@ const searchByIngredients = async (
     await Promise.all(
       normalized.map(async (ing) => {
         if (!ing) return;
-        try {
-          const res = await fetch(
-            `https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(
-              ing
-            )}`
-          );
-          const data = await res.json();
-          const meals = data?.meals ?? [];
-          meals.forEach((m: any) => {
-            const id = m.idMeal;
-            matchCounts[id] = (matchCounts[id] || 0) + 1;
-            if (!mealMeta[id])
-              mealMeta[id] = {
-                strMeal: m.strMeal,
-                strMealThumb: m.strMealThumb,
-              };
-          });
-        } catch {}
+        const data = await fetchAPI(
+          `https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(
+            ing
+          )}`
+        );
+        const meals = data?.meals ?? [];
+        meals.forEach((m: any) => {
+          const id = m.idMeal;
+          matchCounts[id] = (matchCounts[id] || 0) + 1;
+          if (!mealMeta[id])
+            mealMeta[id] = { strMeal: m.strMeal, strMealThumb: m.strMealThumb };
+        });
       })
     );
-
-    if (Object.keys(matchCounts).length === 0) return [];
 
     const sortedIds = Object.entries(matchCounts)
       .map(([id, count]) => ({ id, count }))
@@ -130,77 +163,15 @@ const searchByIngredients = async (
     const details = (
       await Promise.all(
         sortedIds.map(async ({ id }) => {
-          try {
-            const res = await fetch(
-              `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`
-            );
-            const data = await res.json();
-            return data?.meals?.[0] ?? null;
-          } catch {
-            return null;
-          }
+          const d = await fetchAPI(
+            `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`
+          );
+          return d?.meals?.[0] ?? null;
         })
       )
     ).filter(Boolean);
 
-    const results: { recipe: Recipe; matchCount: number }[] = details.map(
-      (meal: any) => {
-        const mealIngredients = Array.from({ length: 20 }, (_, i) =>
-          (meal[`strIngredient${i + 1}`] || "").toLowerCase().trim()
-        ).filter(Boolean);
-        const matchCount = normalized.filter((ing) =>
-          mealIngredients.some((m) => m.includes(ing) || ing.includes(m))
-        ).length;
-        return {
-          recipe: {
-            idMeal: meal.idMeal,
-            title: meal.strMeal,
-            image: meal.strMealThumb,
-            category: meal.strCategory,
-            area: meal.strArea,
-            ingredients: buildIngredientsFromMeal(meal),
-            instructions: splitInstructions(meal.strInstructions),
-            cookTime: "30-45 mins",
-          },
-          matchCount,
-        };
-      }
-    );
-
-    results.sort((a, b) => b.matchCount - a.matchCount);
-    return results.slice(0, topN).map((r) => r.recipe);
-  } catch {
-    return [];
-  }
-};
-
-const searchByCategory = async (
-  category: string,
-  topN = 3
-): Promise<Recipe[]> => {
-  try {
-    const res = await fetch(
-      `https://www.themealdb.com/api/json/v1/1/filter.php?c=${encodeURIComponent(
-        category
-      )}`
-    );
-    const meals = res ? (await res.json())?.meals ?? [] : [];
-    const details = (
-      await Promise.all(
-        meals.slice(0, topN * 2).map(async (m: any) => {
-          try {
-            const r = await fetch(
-              `https://www.themealdb.com/api/json/v1/1/lookup.php?i=${m.idMeal}`
-            );
-            const d = await r.json();
-            return d?.meals?.[0] ?? null;
-          } catch {
-            return null;
-          }
-        })
-      )
-    ).filter(Boolean);
-    return details.slice(0, topN).map((meal: any) => ({
+    const results = details.map((meal: any) => ({
       idMeal: meal.idMeal,
       title: meal.strMeal,
       image: meal.strMealThumb,
@@ -210,13 +181,15 @@ const searchByCategory = async (
       instructions: splitInstructions(meal.strInstructions),
       cookTime: "30-45 mins",
     }));
+
+    return results.slice(0, topN);
   } catch {
     return [];
   }
 };
 
-/* ----------------------- Component ----------------------- */
-export default function ChatbotPage() {
+/* ----------------------- Main Component ----------------------- */
+export default function RecipePage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -228,95 +201,49 @@ export default function ChatbotPage() {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [jsonLD, setJsonLD] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const { addNotification } = useNotification(); // ✅ Notification hook
+  const suggestions = useMemo(
+    () => [
+      "Vegetarian",
+      "Vegan",
+      "Seafood",
+      "Chicken",
+      "Beef",
+      "Dessert",
+      "Pasta",
+      "Tomato",
+      "Potato",
+      "Cheese",
+    ],
+    []
+  );
 
-  const suggestions = [
-    "Vegetarian",
-    "Vegan",
-    "Seafood",
-    "Chicken",
-    "Beef",
-    "Dessert",
-    "Pasta",
-    "Tomato",
-    "Potato",
-    "Cheese",
-  ];
+  const categoryMap = useMemo(
+    () => ({
+      vegetarian: "Vegetarian",
+      vegan: "Vegan",
+      seafood: "Seafood",
+      chicken: "Chicken",
+      beef: "Beef",
+      dessert: "Dessert",
+      pasta: "Pasta",
+    }),
+    []
+  );
 
+  useEffect(() => setMounted(true), []);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const categoryMap: Record<string, string> = {
-    vegetarian: "Vegetarian",
-    vegan: "Vegan",
-    seafood: "Seafood",
-    chicken: "Chicken",
-    beef: "Beef",
-    dessert: "Dessert",
-    pasta: "Pasta",
-  };
-
-  /* ✅ Updated: Save to MongoDB and LocalStorage */
-  const saveToHistory = async (recipe: Recipe, userInput: string) => {
-    try {
-      const userData = localStorage.getItem("user");
-      if (!userData) return;
-
-      const { email } = JSON.parse(userData);
-      if (!email) return;
-
-      // ✅ Save recipe to MongoDB
-      await fetch("/api/meal-history", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          type: "recipe",
-          query: userInput,
-          recipe: {
-            title: recipe.title,
-            ingredients: recipe.ingredients,
-            instructions: recipe.instructions,
-            image: recipe.image,
-            category: recipe.category,
-            area: recipe.area,
-            cookTime: recipe.cookTime,
-          },
-        }),
-      });
-
-      addNotification(`Recipe "${recipe.title}" saved to your history 🍽️`);
-      toast.success("Recipe saved to history!");
-      onHistoryUpdate(); // ✅ Trigger global update event
-
-      // ✅ Also store locally for offline
-      const storedHistory = localStorage.getItem("recipeHistory");
-      const history = storedHistory ? JSON.parse(storedHistory) : [];
-      const newItem = {
-        id: `${Date.now()}`,
-        title: recipe.title,
-        timestamp: new Date().toISOString(),
-        userInput,
-        recipe,
-      };
-      localStorage.setItem(
-        "recipeHistory",
-        JSON.stringify([newItem, ...history])
-      );
-    } catch (error) {
-      console.error("Error saving history:", error);
-    }
-  };
-
   const handleSend = useCallback(async () => {
     const raw = inputValue.trim();
     if (!raw) return;
-
-    setMessages((prev) => [
-      ...prev,
+    setMessages((p) => [
+      ...p,
       { id: `${Date.now()}-u`, type: "user", content: raw },
     ]);
     setInputValue("");
@@ -326,32 +253,39 @@ export default function ChatbotPage() {
       .split(",")
       .map((q) => q.trim())
       .filter(Boolean);
+    const allRecipes: Recipe[] = [];
 
     for (const query of queries) {
       let recipes: Recipe[] = [];
       const lower = query.toLowerCase();
 
-      let matchedCategory = "";
-      for (const key of Object.keys(categoryMap))
-        if (lower.includes(key)) matchedCategory = categoryMap[key];
+      const matchedCategory = Object.keys(categoryMap).find((key) =>
+        lower.includes(key)
+      );
 
-      if (matchedCategory) recipes = await searchByCategory(matchedCategory, 3);
-      if (recipes.length === 0) {
-        const tokens = query.split(/\s+/).filter(Boolean);
-        if (tokens.length >= 1)
-          recipes = await searchByIngredients(tokens.slice(0, 5), 3);
-      }
+     if (
+       matchedCategory &&
+       categoryMap[matchedCategory as keyof typeof categoryMap]
+     ) {
+       const categoryValue =
+         categoryMap[matchedCategory as keyof typeof categoryMap];
+       if (categoryValue) {
+         recipes = await searchByCategory(categoryValue, 3);
+       }
+     }
+
+      if (recipes.length === 0)
+        recipes = await searchByIngredients(lower.split(/\s+/), 3);
+
       if (recipes.length === 0) recipes = await searchByName(query, 3);
 
       if (recipes.length > 0) {
-        addNotification(`Found ${recipes.length} recipes for "${query}" 🍲`);
-        for (const recipe of recipes) await saveToHistory(recipe, query);
-      } else {
-        addNotification(`No recipes found for "${query}" ❌`);
-      }
+        allRecipes.push(...recipes);
+        toast.success(`Found ${recipes.length} recipes for "${query}" 🍲`);
+      } else toast.error(`No recipes found for "${query}" ❌`);
 
-      setMessages((prev) => [
-        ...prev,
+      setMessages((p) => [
+        ...p,
         {
           id: `${Date.now()}-b`,
           type: "bot",
@@ -363,10 +297,34 @@ export default function ChatbotPage() {
       ]);
     }
 
-    setIsLoading(false);
-  }, [inputValue]);
+    // ✅ Generate structured JSON-LD data
+    if (allRecipes.length > 0) {
+      const schema = {
+        "@context": "https://schema.org/",
+        "@type": "ItemList",
+        itemListElement: allRecipes.map((r, index) => ({
+          "@type": "Recipe",
+          position: index + 1,
+          name: r.title,
+          image: r.image,
+          recipeCategory: r.category,
+          recipeCuisine: r.area,
+          cookTime: r.cookTime,
+          recipeIngredient: r.ingredients,
+          recipeInstructions: r.instructions.map((inst) => ({
+            "@type": "HowToStep",
+            text: inst,
+          })),
+          author: { "@type": "Organization", name: "EatoAI" },
+        })),
+      };
+      setJsonLD(JSON.stringify(schema));
+    }
 
-  const handleCopy = (recipe: Recipe) => {
+    setIsLoading(false);
+  }, [inputValue, categoryMap]);
+
+  const handleCopy = useCallback((recipe: Recipe) => {
     const text = `Recipe: ${
       recipe.title
     }\n\nIngredients:\n${recipe.ingredients.join(
@@ -374,47 +332,77 @@ export default function ChatbotPage() {
     )}\n\nInstructions:\n${recipe.instructions.join("\n")}`;
     navigator.clipboard.writeText(text);
     toast.success("Recipe copied!");
-    addNotification(`You copied the recipe "${recipe.title}" 📋`);
-  };
+  }, []);
+
+  if (!mounted) return null;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 flex flex-col h-[90vh]">
-      {/* Suggestions */}
-      <div className="flex flex-wrap gap-2 mb-2">
-        {suggestions.map((s) => (
-          <Badge
-            key={s}
-            className="cursor-pointer hover:bg-green-200"
-            onClick={() =>
-              setInputValue((prev) => (prev ? prev + ", " + s : s))
-            }
-          >
-            {s}
-          </Badge>
-        ))}
-      </div>
+    <>
+    <Header />
+      <Head>
+        <title>EatoAI Recipe Generator 🍲 | Smart Meal Ideas</title>
+        <meta
+          name="description"
+          content="Generate AI-powered recipes using your ingredients. Get delicious meal ideas and nutrition insights instantly with EatoAI."
+        />
+        <meta
+          name="keywords"
+          content="EatoAI, recipe generator, AI cooking, meal planner, healthy recipes, food assistant"
+        />
+        <meta property="og:title" content="EatoAI Recipe Generator 🍲" />
+        <meta
+          property="og:description"
+          content="Discover personalized AI-generated recipes with EatoAI – your smart cooking assistant."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://eatoai.vercel.app/recipe" />
+        <meta property="og:image" content="/og-image.png" />
+        <link rel="canonical" href="https://eatoai.vercel.app/recipe" />
+        {jsonLD && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: jsonLD }}
+          />
+        )}
+      </Head>
 
-      {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto mb-4">
-        <AnimatePresence>
-          {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className={`flex ${
-                msg.type === "user" ? "justify-end" : "justify-start"
-              } mb-3`}
+      <div className="max-w-4xl mx-auto p-4 flex flex-col h-[90vh]">
+        {/* Suggestions */}
+        <div className="flex flex-wrap gap-2 mb-2">
+          {suggestions.map((s) => (
+            <Badge
+              key={s}
+              className="cursor-pointer hover:bg-green-200"
+              onClick={() =>
+                setInputValue((prev) => (prev ? prev + ", " + s : s))
+              }
             >
-              <Card className="max-w-[75%] p-3">
-                <CardContent>
-                  {msg.type === "bot" && (
-                    <ChefHat className="w-5 h-5 mb-1 text-green-600" />
-                  )}
-                  <p>{msg.content}</p>
-                  {msg.recipes &&
-                    msg.recipes.map((r) => (
+              {s}
+            </Badge>
+          ))}
+        </div>
+
+        {/* Chat Messages */}
+        
+        <div className="flex-1 overflow-y-auto mb-4">
+          <AnimatePresence>
+            {messages.map((msg) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className={`flex ${
+                  msg.type === "user" ? "justify-end" : "justify-start"
+                } mb-3`}
+              >
+                <Card className="max-w-[75%] p-3">
+                  <CardContent>
+                    {msg.type === "bot" && (
+                      <ChefHat className="w-5 h-5 mb-1 text-green-600" />
+                    )}
+                    <p>{msg.content}</p>
+                    {msg.recipes?.map((r) => (
                       <div
                         key={r.idMeal}
                         className="mt-2 border rounded-lg p-2 cursor-pointer hover:bg-gray-100 flex items-center gap-2 justify-between"
@@ -442,7 +430,6 @@ export default function ChatbotPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex items-center gap-1"
                           onClick={() => handleCopy(r)}
                         >
                           <Copy className="w-4 h-4" />
@@ -450,102 +437,103 @@ export default function ChatbotPage() {
                         </Button>
                       </div>
                     ))}
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        <div ref={messagesEndRef} />
-      </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          <div ref={messagesEndRef} />
+        </div>
 
-      {/* Input */}
-      <div className="flex gap-2">
-        <Input
-          placeholder="Type ingredients, dishes or categories..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-        />
-        <Button onClick={handleSend} disabled={isLoading}>
-          {isLoading ? (
-            <Loader2 className="animate-spin w-5 h-5" />
-          ) : (
-            <Send className="w-5 h-5" />
-          )}
-        </Button>
-      </div>
+        {/* Input */}
+        <div className="flex gap-2">
+          <Input
+            placeholder="Type ingredients, dishes or categories..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          />
+          <Button onClick={handleSend} disabled={isLoading}>
+            {isLoading ? (
+              <Loader2 className="animate-spin w-5 h-5" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
+          </Button>
+        </div>
 
-      {/* Recipe Modal */}
-      <AnimatePresence>
-        {selectedRecipe && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex justify-center items-start z-50 p-4 overflow-auto"
-            onClick={() => setSelectedRecipe(null)}
-          >
+        {/* Recipe Modal */}
+        <AnimatePresence>
+          {selectedRecipe && (
             <motion.div
-              initial={{ y: -50 }}
-              animate={{ y: 0 }}
-              exit={{ y: -50 }}
-              className="bg-white rounded-2xl max-w-2xl w-full p-6 overflow-y-auto max-h-[85vh]"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 flex justify-center items-start z-50 p-4 overflow-auto"
+              onClick={() => setSelectedRecipe(null)}
             >
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute top-2 right-2"
-                onClick={() => setSelectedRecipe(null)}
+              <motion.div
+                initial={{ y: -50 }}
+                animate={{ y: 0 }}
+                exit={{ y: -50 }}
+                className="bg-white rounded-2xl max-w-2xl w-full p-6 overflow-y-auto max-h-[85vh]"
+                onClick={(e) => e.stopPropagation()}
               >
-                <X />
-              </Button>
-              <h2 className="text-2xl font-bold mb-2">
-                {selectedRecipe.title}
-              </h2>
-              {selectedRecipe.image && (
-                <Image
-                  src={selectedRecipe.image}
-                  alt={selectedRecipe.title}
-                  width={350}
-                  height={200}
-                  className="rounded-lg object-cover mb-4 w-full"
-                />
-              )}
-              <div className="flex gap-3 mb-4">
-                {selectedRecipe.category && (
-                  <Badge>{selectedRecipe.category}</Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-2 right-2"
+                  onClick={() => setSelectedRecipe(null)}
+                >
+                  <X />
+                </Button>
+                <h2 className="text-2xl font-bold mb-2">
+                  {selectedRecipe.title}
+                </h2>
+                {selectedRecipe.image && (
+                  <Image
+                    src={selectedRecipe.image}
+                    alt={selectedRecipe.title}
+                    width={350}
+                    height={200}
+                    className="rounded-lg object-cover mb-4 w-full"
+                  />
                 )}
-                {selectedRecipe.area && <Badge>{selectedRecipe.area}</Badge>}
-                {selectedRecipe.cookTime && (
-                  <Badge>{selectedRecipe.cookTime}</Badge>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mb-4 flex items-center gap-1"
-                onClick={() => handleCopy(selectedRecipe)}
-              >
-                <Copy className="w-4 h-4" />
-                Copy Recipe
-              </Button>
-              <h3 className="text-lg font-semibold mb-2">Ingredients:</h3>
-              <ul className="list-disc list-inside mb-4">
-                {selectedRecipe.ingredients.map((ing, i) => (
-                  <li key={i}>{ing}</li>
-                ))}
-              </ul>
-              <h3 className="text-lg font-semibold mb-2">Instructions:</h3>
-              <ol className="list-decimal list-inside">
-                {selectedRecipe.instructions.map((inst, i) => (
-                  <li key={i}>{inst}</li>
-                ))}
-              </ol>
+                <div className="flex gap-3 mb-4">
+                  {selectedRecipe.category && (
+                    <Badge>{selectedRecipe.category}</Badge>
+                  )}
+                  {selectedRecipe.area && <Badge>{selectedRecipe.area}</Badge>}
+                  {selectedRecipe.cookTime && (
+                    <Badge>{selectedRecipe.cookTime}</Badge>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mb-4 flex items-center gap-1"
+                  onClick={() => handleCopy(selectedRecipe)}
+                >
+                  <Copy className="w-4 h-4" />
+                  Copy Recipe
+                </Button>
+                <h3 className="text-lg font-semibold mb-2">Ingredients:</h3>
+                <ul className="list-disc list-inside mb-4">
+                  {selectedRecipe.ingredients.map((ing, i) => (
+                    <li key={i}>{ing}</li>
+                  ))}
+                </ul>
+                <h3 className="text-lg font-semibold mb-2">Instructions:</h3>
+                <ol className="list-decimal list-inside">
+                  {selectedRecipe.instructions.map((inst, i) => (
+                    <li key={i}>{inst}</li>
+                  ))}
+                </ol>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+          )}
+        </AnimatePresence>
+      </div>
+    </>
   );
 }

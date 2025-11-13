@@ -6,19 +6,24 @@ import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
 
 export default function Home() {
-  const [showLoading, setShowLoading] = useState(false);
-  const [isLandingComplete, setIsLandingComplete] = useState(false);
+  const [showLoading, setShowLoading] = useState<boolean>(false);
+  const [isLandingComplete, setIsLandingComplete] = useState<boolean>(false);
+  const [mounted, setMounted] = useState<boolean>(false);
 
   useEffect(() => {
-    // ✅ Check if user has already seen the loading screen
-    const hasVisited = localStorage.getItem("hasVisited");
+    // ✅ Prevent hydration mismatch during SSR
+    setMounted(true);
 
-    if (!hasVisited) {
-      setShowLoading(true);
-      localStorage.setItem("hasVisited", "true"); // mark as visited
-    } else {
-      setShowLoading(false);
-      setIsLandingComplete(true);
+    if (typeof window !== "undefined") {
+      const hasVisited = localStorage.getItem("hasVisited");
+
+      if (!hasVisited) {
+        setShowLoading(true);
+        localStorage.setItem("hasVisited", "true"); // Mark as visited
+      } else {
+        setShowLoading(false);
+        setIsLandingComplete(true);
+      }
     }
   }, []);
 
@@ -28,21 +33,23 @@ export default function Home() {
     setIsLandingComplete(true);
   };
 
+  if (!mounted) return null; // Avoid SSR hydration issues
+
   return (
     <>
       {showLoading ? (
         <LoadingScreen onComplete={handleLoadingComplete} />
       ) : (
-        <LoginWrapper />
+        <MainWrapper />
       )}
     </>
   );
 }
 
 // ✅ Wrapper to handle login -> main content flow
-function LoginWrapper() {
+function MainWrapper() {
   return (
-    <main className="flex flex-col min-h-screen">
+    <main className="flex flex-col min-h-screen bg-background text-foreground transition-colors duration-300">
       <Hero />
       <Footer />
     </main>

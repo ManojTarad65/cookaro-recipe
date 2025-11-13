@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Send, Bot, User } from "lucide-react";
 import { motion } from "framer-motion";
-import { useNotification } from "@/context/NotificationContext"; // ✅ Import notification context
+
 
 // ✅ Helper function for formatting text
 function formatText(text: string) {
@@ -34,7 +34,6 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const { addNotification } = useNotification(); // ✅ Use notifications
 
   // Scroll to bottom when new messages appear
   useEffect(() => {
@@ -46,7 +45,7 @@ export default function ChatPage() {
 
     const newMsg = { role: "user", text: input };
     setMessages((prev) => [...prev, newMsg]);
-    addNotification("You asked something to EatoAI 💬"); // ✅ Notify user sent message
+
 
     setInput("");
     setLoading(true);
@@ -67,13 +66,13 @@ export default function ChatPage() {
       };
 
       setMessages((prev) => [...prev, botReply]);
-      addNotification("EatoAI replied with a suggestion 🤖"); // ✅ Notify AI response
+
     } catch (error) {
       setMessages((prev) => [
         ...prev,
         { role: "bot", text: "⚠️ Unable to connect. Please try again." },
       ]);
-      addNotification("Connection error while chatting ⚠️"); // ✅ Notify network issue
+
     } finally {
       setLoading(false);
     }

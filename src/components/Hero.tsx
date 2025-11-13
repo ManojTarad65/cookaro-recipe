@@ -1,160 +1,7 @@
-
-// "use client";
-
-// import { useState, useEffect } from "react";
-// import { Button } from "@/components/ui/button";
-// import { Card, CardContent } from "@/components/ui/card";
-// import Link from "next/link";
-// import { useRouter } from "next/navigation";
-// import { ChefHat, Sparkles, Clock, Users, ChartBarStackedIcon, NutIcon, CookieIcon } from "lucide-react";
-// import { toast } from "sonner";
-
-// const Hero = () => {
-//   const [user, setUser] = useState<any>(null);
-//   const router = useRouter();
-
-//   useEffect(() => {
-//     const userData = localStorage.getItem("user");
-//     if (userData) {
-//       setUser(JSON.parse(userData));
-//     }
-//   }, []);
-
-//   const handleStartCooking = () => {
-//     if (!user) {
-//       toast.error("Please login to start cooking!");
-//       router.push("/login");
-//       return;
-//     }
-//     router.push("/chatbot");
-//   };
-
-//   const features = [
-//     {
-//       icon: Sparkles,
-//       title: "AI Chat Assistant",
-//       description:
-//         "Chat with EatoAI to get instant recipe ideas, nutrition tips, and meal suggestions.",
-//     },
-//     {
-//       icon: CookieIcon,
-//       title: "Smart Recipe Generator",
-//       description:
-//         "Enter your ingredients and get delicious AI-curated recipes in seconds.",
-//     },
-//     {
-//       icon: ChartBarStackedIcon,
-//       title: "Daily Meal Log",
-//       description:
-//         "Track your daily meals, calories, and nutrients for a balanced lifestyle.",
-//     },
-//     {
-//       icon: Clock,
-//       title: "Recipe History",
-//       description:
-//         "Access all your previously generated recipes anytime — your smart food journal.",
-//     },
-//   ];
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
-//       {/* Hero Section */}
-//       <section className="py-20 px-4">
-//         <div className="max-w-7xl mx-auto text-center">
-//           <div className="animate-fade-in">
-//             <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
-//               Discover Smarter
-//               <span className="text-orange-600 block">
-//                 Meals with EatoAI 🍳
-//               </span>
-//             </h1>
-//             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-//               Your AI-powered cooking partner that turns simple ingredients into
-//               delicious, personalized recipes in seconds.
-//             </p>
-//             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-//               <Link href="/recipe">
-//                 <Button
-//                   size="lg"
-//                   className="bg-orange-600 hover:bg-orange-700 text-lg px-8 py-3 animate-scale-in"
-//                   onClick={handleStartCooking}
-//                 >
-//                   Explore Recipes
-//                   <ChefHat className="ml-2 h-5 w-5" />
-//                 </Button>
-//               </Link>
-//               <Link href="/about">
-//                 <Button
-//                   variant="outline"
-//                   size="lg"
-//                   className="text-lg px-8 py-3 border-orange-200 hover:bg-orange-50"
-//                 >
-//                   About EatoAI
-//                 </Button>
-//               </Link>
-//             </div>
-//           </div>
-//         </div>
-//       </section>
-
-//       {/* Features Section */}
-//       <section className="py-20 px-4 bg-white">
-//         <div className="max-w-7xl mx-auto">
-//           <div className="text-center mb-16">
-//             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-//               Why EatoAI Stands Out?
-//             </h2>
-//             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-//               Discover how EatoAI makes healthy cooking smarter, simpler, and
-//               more personalized.
-//             </p>
-//           </div>
-
-//           <div className="grid md:grid-cols-3 gap-8">
-//             {features.map((feature, index) => (
-//               <Card
-//                 key={index}
-//                 className="hover:shadow-lg transition-all duration-300 hover-scale border-orange-100"
-//               >
-//                 <CardContent className="p-8 text-center">
-//                   <feature.icon className="h-12 w-12 text-orange-600 mx-auto mb-4" />
-//                   <h3 className="text-xl font-semibold text-gray-900 mb-3">
-//                     {feature.title}
-//                   </h3>
-//                   <p className="text-gray-600">{feature.description}</p>
-//                 </CardContent>
-//               </Card>
-//             ))}
-//           </div>
-//         </div>
-//       </section>
-//       <section className="py-20 px-4 bg-gradient-to-r from-orange-600 to-amber-600">
-//         <div className="max-w-4xl mx-auto text-center text-white">
-//           <h2 className="text-4xl font-bold mb-4">
-//             Ready to Create Amazing Recipes?
-//           </h2>
-//           <p className="text-xl mb-8 opacity-90">
-//             Join thousands of home cooks who are already using AI to enhance
-//             their culinary adventures
-//           </p>
-//           <Link href="/recipe">
-//             <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
-//               Get Started Free
-//             </Button>
-//           </Link>
-//         </div>
-//       </section>
-//     </div>
-//   );
-// };
-
-// export default Hero;
-
-
-
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
@@ -180,10 +27,14 @@ const Hero = () => {
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
-      setUser(JSON.parse(userData));
+      try {
+        setUser(JSON.parse(userData));
+      } catch {
+        setUser(null);
+      }
     }
 
-    // Simulate live counter increment
+    // Simulate live counter increment (clean up properly)
     const interval = setInterval(() => {
       setLiveUsers((prev) => prev + Math.floor(Math.random() * 3));
     }, 5000);
@@ -191,77 +42,83 @@ const Hero = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleStartCooking = () => {
+  const handleStartCooking = useCallback(() => {
     if (!user) {
       toast.error("Please login to start cooking!");
       router.push("/login");
       return;
     }
     router.push("/recipe");
-  };
+  }, [user, router]);
 
-  const features = [
-    {
-      icon: Bot,
-      title: "AI Chat Assistant 🤖",
-      description:
-        "Talk directly with EatoAI — your AI health companion that answers food questions, suggests recipes, and helps you make smarter meal decisions.",
-    },
-    {
-      icon: CookieIcon,
-      title: "Smart Recipe Generator 🍪",
-      description:
-        "Just type your ingredients — like ‘chicken, tomato, garlic’ — and EatoAI instantly creates tasty, healthy recipes with steps and nutrition info.",
-    },
-    {
-      icon: HeartPulse,
-      title: "Personalized Health Profile ❤️",
-      description:
-        "Enter your age, weight, height, and goals to get AI-tailored diet plans, calorie targets, and macro-balanced meals — just for your body type.",
-    },
-    {
-      icon: ChartBarStackedIcon,
-      title: "Daily Meal Log 📊",
-      description:
-        "Easily log what you eat daily, and track calories, proteins, carbs, and fats to maintain your fitness and health goals effortlessly.",
-    },
-    {
-      icon: Clock,
-      title: "Recipe History 🕒",
-      description:
-        "Never lose your favorite dishes again — every recipe you generate is saved automatically for easy access later.",
-    },
-    {
-      icon: Users,
-      title: "Community Driven 👩‍🍳",
-      description:
-        "Join a fast-growing family of food enthusiasts and fitness lovers who are using AI to cook smarter and eat better every day.",
-    },
-  ];
+  const features = useMemo(
+    () => [
+      {
+        icon: Bot,
+        title: "AI Chat Assistant 🤖",
+        description:
+          "Talk directly with EatoAI — your AI health companion that answers food questions, suggests recipes, and helps you make smarter meal decisions.",
+      },
+      {
+        icon: CookieIcon,
+        title: "Smart Recipe Generator 🍪",
+        description:
+          "Just type your ingredients — like ‘chicken, tomato, garlic’ — and EatoAI instantly creates tasty, healthy recipes with steps and nutrition info.",
+      },
+      {
+        icon: HeartPulse,
+        title: "Personalized Health Profile ❤️",
+        description:
+          "Enter your age, weight, height, and goals to get AI-tailored diet plans, calorie targets, and macro-balanced meals — just for your body type.",
+      },
+      {
+        icon: ChartBarStackedIcon,
+        title: "Daily Meal Log 📊",
+        description:
+          "Easily log what you eat daily, and track calories, proteins, carbs, and fats to maintain your fitness and health goals effortlessly.",
+      },
+      {
+        icon: Clock,
+        title: "Recipe History 🕒",
+        description:
+          "Never lose your favorite dishes again — every recipe you generate is saved automatically for easy access later.",
+      },
+      {
+        icon: Users,
+        title: "Community Driven 👩‍🍳",
+        description:
+          "Join a fast-growing family of food enthusiasts and fitness lovers who are using AI to cook smarter and eat better every day.",
+      },
+    ],
+    []
+  );
 
-  const testimonials = [
-    {
-      name: "Aarav Sharma",
-      role: "Fitness Enthusiast",
-      feedback:
-        "EatoAI completely changed my eating habits! It helps me create healthy meals that match my daily goals without wasting time thinking about what to cook.",
-      image: "https://randomuser.me/api/portraits/men/32.jpg",
-    },
-    {
-      name: "Sneha Patel",
-      role: "Working Professional",
-      feedback:
-        "As someone who’s always short on time, EatoAI makes cooking so effortless. The AI suggestions are creative, and I love how it tracks my nutrition.",
-      image: "https://randomuser.me/api/portraits/women/45.jpg",
-    },
-    {
-      name: "Rohan Mehta",
-      role: "College Student",
-      feedback:
-        "I used to skip meals or eat junk, but now EatoAI gives me healthy, affordable meal ideas using ingredients I already have. It’s a lifesaver!",
-      image: "https://randomuser.me/api/portraits/men/22.jpg",
-    },
-  ];
+  const testimonials = useMemo(
+    () => [
+      {
+        name: "Aarav Sharma",
+        role: "Fitness Enthusiast",
+        feedback:
+          "EatoAI completely changed my eating habits! It helps me create healthy meals that match my daily goals without wasting time thinking about what to cook.",
+        image: "https://randomuser.me/api/portraits/men/32.jpg",
+      },
+      {
+        name: "Sneha Patel",
+        role: "Working Professional",
+        feedback:
+          "As someone who’s always short on time, EatoAI makes cooking so effortless. The AI suggestions are creative, and I love how it tracks my nutrition.",
+        image: "https://randomuser.me/api/portraits/women/45.jpg",
+      },
+      {
+        name: "Rohan Mehta",
+        role: "College Student",
+        feedback:
+          "I used to skip meals or eat junk, but now EatoAI gives me healthy, affordable meal ideas using ingredients I already have. It’s a lifesaver!",
+        image: "https://randomuser.me/api/portraits/men/22.jpg",
+      },
+    ],
+    []
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
@@ -285,11 +142,12 @@ const Hero = () => {
                 size="lg"
                 className="bg-orange-600 hover:bg-orange-700 text-lg px-8 py-3 animate-scale-in"
                 onClick={handleStartCooking}
+                aria-label="Explore recipes"
               >
                 Explore Recipes
                 <ChefHat className="ml-2 h-5 w-5" />
               </Button>
-              <Link href="/about">
+              <Link href="/about" aria-label="Learn more about EatoAI">
                 <Button
                   variant="outline"
                   size="lg"
@@ -390,11 +248,16 @@ const Hero = () => {
                   “{t.feedback}”
                 </p>
                 <div className="flex items-center gap-3">
-                  <img
-                    src={t.image}
-                    alt={t.name}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-orange-400"
-                  />
+                  <div className="w-12 h-12 relative rounded-full overflow-hidden border-2 border-orange-400">
+                    <Image
+                      src={t.image}
+                      alt={t.name}
+                      width={48}
+                      height={48}
+                      className="object-cover"
+                      priority={false}
+                    />
+                  </div>
                   <div>
                     <p className="font-semibold text-gray-900">{t.name}</p>
                     <p className="text-sm text-gray-500">{t.role}</p>
@@ -414,7 +277,7 @@ const Hero = () => {
             Join thousands of food lovers using EatoAI to cook better, track
             nutrition, and live healthier.
           </p>
-          <Link href="/recipe">
+          <Link href="/recipe" aria-label="Get started with EatoAI recipes">
             <Button
               size="lg"
               variant="secondary"

@@ -1,5 +1,5 @@
-
 "use client";
+
 import { useState, useEffect } from "react";
 import { ChefHat, Utensils, Coffee, Cookie } from "lucide-react";
 
@@ -31,7 +31,7 @@ const LoadingScreen = ({ onComplete }: LoadingScreenProps) => {
 
   // ✅ Generate random dots after mount (client-side only)
   useEffect(() => {
-    const generated = [...Array(20)].map(() => ({
+    const generated = Array.from({ length: 20 }, () => ({
       left: `${Math.random() * 100}%`,
       top: `${Math.random() * 100}%`,
       delay: `${Math.random() * 3}s`,
@@ -40,12 +40,15 @@ const LoadingScreen = ({ onComplete }: LoadingScreenProps) => {
     setDots(generated);
   }, []);
 
-  // ✅ Progress and phrases animation
+  // ✅ Handle loading progress and phrases
   useEffect(() => {
-    const interval = setInterval(() => {
+    let progressInterval: NodeJS.Timeout | null = null;
+    let phraseInterval: NodeJS.Timeout | null = null;
+
+    progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
-          clearInterval(interval);
+          if (progressInterval) clearInterval(progressInterval);
           setTimeout(() => onComplete(), 500);
           return 100;
         }
@@ -53,15 +56,15 @@ const LoadingScreen = ({ onComplete }: LoadingScreenProps) => {
       });
     }, 80);
 
-    const phraseInterval = setInterval(() => {
+    phraseInterval = setInterval(() => {
       setCurrentPhrase((prev) => (prev + 1) % loadingPhrases.length);
     }, 1600);
 
     return () => {
-      clearInterval(interval);
-      clearInterval(phraseInterval);
+      if (progressInterval) clearInterval(progressInterval);
+      if (phraseInterval) clearInterval(phraseInterval);
     };
-  }, [onComplete]);
+  }, [onComplete, loadingPhrases.length]);
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-400 flex items-center justify-center z-50 overflow-hidden">
@@ -81,7 +84,7 @@ const LoadingScreen = ({ onComplete }: LoadingScreenProps) => {
         ))}
       </div>
 
-      {/* Floating Food Icons */}
+      {/* Floating Icons */}
       {floatingIcons.map(({ Icon, delay, x, y }, index) => (
         <div
           key={index}
@@ -97,7 +100,7 @@ const LoadingScreen = ({ onComplete }: LoadingScreenProps) => {
         </div>
       ))}
 
-      {/* Main Loading Section */}
+      {/* Main Content */}
       <div className="text-center z-10">
         {/* Logo */}
         <div className="mb-8 relative">
