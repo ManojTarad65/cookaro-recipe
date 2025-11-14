@@ -1,10 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactStrictMode: true,
   images: {
-    domains: ["www.themealdb.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "www.themealdb.com",
+      },
+      {
+        protocol: "https",
+        hostname: "randomuser.me",
+      },
+    ],
   },
 };
 

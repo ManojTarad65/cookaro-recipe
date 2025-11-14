@@ -147,7 +147,7 @@ const Hero = () => {
                 Explore Recipes
                 <ChefHat className="ml-2 h-5 w-5" />
               </Button>
-              <Link href="/about" aria-label="Learn more about EatoAI">
+              <Link href="/login" aria-label="Learn more about EatoAI">
                 <Button
                   variant="outline"
                   size="lg"
@@ -181,7 +181,7 @@ const Hero = () => {
               </p>
             </div>
             <div className="bg-white/10 backdrop-blur-md px-10 py-6 rounded-2xl shadow-lg">
-              <h3 className="text-5xl font-bold">12k+</h3>
+              <h3 className="text-5xl font-bold">5k+</h3>
               <p className="text-lg mt-2 opacity-90">AI Recipes Generated</p>
             </div>
             <div className="bg-white/10 backdrop-blur-md px-10 py-6 rounded-2xl shadow-lg">

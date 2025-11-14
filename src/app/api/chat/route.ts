@@ -5,82 +5,85 @@ export async function POST(req: Request) {
     const { message, userProfile } = await req.json();
 
     if (!message) {
-      return NextResponse.json(
-        { error: "Message is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ reply: "Message cannot be empty." });
     }
 
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     if (!GEMINI_API_KEY) {
-      console.error("❌ Missing GEMINI_API_KEY in .env.local");
-      return NextResponse.json(
-        { error: "Missing Gemini API key" },
-        { status: 500 }
-      );
+      return NextResponse.json({ reply: "Server error: API key missing." });
     }
 
-    // Gemini endpoint
     const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
-    // 🧠 Build a personalized system prompt using user profile
     const profileText = userProfile
-      ? `
-User Profile:
-- Age: ${userProfile.age || "Not provided"}
-- Gender: ${userProfile.gender || "Not provided"}
-- Height: ${userProfile.height || "Not provided"} cm
-- Weight: ${userProfile.weight || "Not provided"} kg
-- Activity Level: ${userProfile.activityLevel || "Not provided"}
-- Daily Calories Goal: ${userProfile.dailyCalories || "Unknown"}
-`
-      : "User profile is missing.";
+      ? `User Profile:
+Age: ${userProfile.age}
+Gender: ${userProfile.gender}
+Height: ${userProfile.height}
+Weight: ${userProfile.weight}
+Activity Level: ${userProfile.activityLevel}
+Daily Calories Goal: ${userProfile.dailyCalories}`
+      : "No profile saved.";
 
     const SYSTEM_PROMPT = `
-You are **EatoAI**, a friendly AI nutrition expert.
-
-Your job:
-- Give clear, helpful answers about food, recipes, calories, dieting, fitness & nutrition.
-- Use simple English.
-- Give direct guidance.
-- If the user asks for a meal idea, give 2–4 suggestions.
-- If the user asks for nutrition advice, include calories/protein if possible.
-
-Here is the user's profile. Use it to personalize advice:
-${profileText}
+You are EatoAI, a friendly AI nutrition coach.
+Use simple English. Give practical tips. Use the provided user profile.
+If user asks for recipes, provide 2–3 recipes.
 `;
 
-    const response = await fetch(GEMINI_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: SYSTEM_PROMPT + "\nUser: " + message }],
-          },
-        ],
-      }),
-    });
+    // --- Retry Logic ---
+    let attempts = 0;
+    const maxAttempts = 3;
 
-    const data = await response.json();
+    while (attempts < maxAttempts) {
+      attempts++;
 
-    if (data.error) {
-      console.error("⚠️ Gemini Error:", data.error);
-      return NextResponse.json({
-        reply: `⚠️ Gemini API Error: ${data.error.message}`,
-      });
+      try {
+        const response = await fetch(GEMINI_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `${SYSTEM_PROMPT}\n\n${profileText}\n\nUser: ${message}`,
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          const msg = data.error.message.toLowerCase();
+          if (msg.includes("overloaded") || msg.includes("busy")) {
+            // Retry
+            await new Promise((res) => setTimeout(res, attempts * 500));
+            continue;
+          }
+          return NextResponse.json({ reply: "AI Error. Try again later." });
+        }
+
+        const reply =
+          data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+          "I couldn't generate a response.";
+
+        return NextResponse.json({ reply });
+      } catch (error) {
+        await new Promise((res) => setTimeout(res, attempts * 400));
+      }
     }
 
-    const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Sorry, I couldn’t generate a response.";
-
-    return NextResponse.json({ reply });
-  } catch (error) {
-    console.error("💥 Chat API Error:", error);
     return NextResponse.json({
-      reply: "Server error. Please try again later.",
+      reply:
+        "⚠️ AI is overloaded right now. Please wait a moment and try again.",
+    });
+  } catch (err) {
+    return NextResponse.json({
+      reply: "Server error. Please try again.",
     });
   }
 }
