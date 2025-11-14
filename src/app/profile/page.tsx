@@ -17,6 +17,7 @@ import {
   Calculator,
 } from "lucide-react";
 import { toast } from "sonner";
+import Header from "@/components/Header";
 
 
 const Profile = () => {
@@ -157,6 +158,8 @@ const Profile = () => {
   }
 
   return (
+    <>
+    <Header />
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
       <div className="max-w-5xl mx-auto py-20 px-4 space-y-8">
         {/* 🔸 Greeting Section */}
@@ -279,6 +282,7 @@ const Profile = () => {
         </Card>
       </div>
     </div>
+    </>
   );
 };
 

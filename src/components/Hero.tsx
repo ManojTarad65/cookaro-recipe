@@ -18,6 +18,7 @@ import {
   Quote,
 } from "lucide-react";
 import { toast } from "sonner";
+import Header from "./Header";
 
 const Hero = () => {
   const [user, setUser] = useState<any>(null);
@@ -121,6 +122,7 @@ const Hero = () => {
   );
 
   return (
+
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
       {/* 🔸 Hero Section */}
       <section className="py-20 px-4">
@@ -147,7 +149,7 @@ const Hero = () => {
                 Explore Recipes
                 <ChefHat className="ml-2 h-5 w-5" />
               </Button>
-              <Link href="/login" aria-label="Learn more about EatoAI">
+              <Link href="/about" aria-label="Learn more about EatoAI">
                 <Button
                   variant="outline"
                   size="lg"

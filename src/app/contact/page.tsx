@@ -10,6 +10,7 @@ import { loadFull } from "tsparticles";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
+import Header from "@/components/Header";
 
 export default function ContactClient() {
   const particlesInit = useCallback(async (engine: any) => {
@@ -59,7 +60,9 @@ export default function ContactClient() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] text-white">
+    <>
+    <Header />
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50 text-white">
       {/* 🌌 Background Particles */}
       <Particles
         id="tsparticles"
@@ -89,7 +92,7 @@ export default function ContactClient() {
           <h1 className="text-5xl font-bold text-orange-400 mb-4">
             Contact Us
           </h1>
-          <p className="text-lg text-white/80 max-w-2xl mx-auto">
+          <p className="text-lg text-black/80 max-w-2xl mx-auto">
             Have questions, ideas, or feedback? We’d love to connect with you
             and hear your thoughts!
           </p>
@@ -122,14 +125,14 @@ export default function ContactClient() {
             ].map(({ icon: Icon, title, text }, i) => (
               <div
                 key={i}
-                className="flex items-center gap-4 bg-white/10 border border-orange-400/20 p-4 rounded-xl backdrop-blur-sm hover:scale-105 transition-all duration-300"
+                className="flex items-center gap-4 bg-white/10 border border-gray-900/20 p-4 rounded-xl backdrop-blur-sm hover:scale-105 transition-all duration-300"
               >
-                <div className="bg-orange-400/20 p-4 rounded-xl">
-                  <Icon className="text-orange-400 h-6 w-6" />
+                <div className="bg-gray-900/20 p-4 rounded-xl">
+                  <Icon className="text-gray-900 h-6 w-6" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">{title}</h3>
-                  <p className="text-white/70">{text}</p>
+                <div className="text-black/70">
+                  <h3 className="text-lg font-semibold text-black">{title}</h3>
+                  <p className="text-black/70">{text}</p>
                 </div>
               </div>
             ))}
@@ -137,14 +140,14 @@ export default function ContactClient() {
 
           {/* 📝 Contact Form */}
           <motion.form
-            className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-lg border border-orange-400/20 space-y-6"
+            className="bg-white/10 backdrop-blur-lg p-8 rounded-2xl shadow-lg border border-gray-900/20 space-y-6"
             initial={{ x: 60, opacity: 0 }}
             whileInView={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.6 }}
             onSubmit={handleSubmit}
           >
             <div>
-              <label className="block text-sm font-semibold text-white mb-2">
+              <label className="block text-sm font-semibold text-black mb-2">
                 Full Name
               </label>
               <Input
@@ -157,7 +160,7 @@ export default function ContactClient() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-white mb-2">
+              <label className="block text-sm font-semibold text-black mb-2">
                 Email Address
               </label>
               <Input
@@ -170,7 +173,7 @@ export default function ContactClient() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-white mb-2">
+              <label className="block text-sm font-semibold text-black mb-2">
                 Message
               </label>
               <Textarea
@@ -199,5 +202,6 @@ export default function ContactClient() {
       {/* 🌒 Footer */}
       <Footer />
     </div>
+    </>
   );
 }

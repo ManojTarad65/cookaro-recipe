@@ -21,6 +21,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import Header from "@/components/Header";
 
 interface HistoryItem {
   _id?: string;
@@ -247,6 +248,8 @@ Fat: ${item.nutrition.fat}g
 
   // =====================================================
   return (
+    <>
+    <Header />
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
       <div className="max-w-6xl mx-auto p-6 space-y-10">
         <h1 className="text-4xl font-bold text-gray-900 mb-6 text-center">
@@ -346,6 +349,7 @@ Fat: ${item.nutrition.fat}g
         )}
       </div>
     </div>
+    </>
   );
 };
 

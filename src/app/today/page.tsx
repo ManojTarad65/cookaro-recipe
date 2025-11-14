@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
+import Header from "@/components/Header";
 
 interface Meal {
   _id?: string;
@@ -226,6 +227,8 @@ export default function DailyLog() {
   };
 
   return (
+    <>
+    <Header />
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:to-gray-900 transition-all duration-500">
       <div className="max-w-4xl mx-auto p-6 space-y-8">
         {/* Page Title */}
@@ -397,5 +400,6 @@ export default function DailyLog() {
         )}
       </div>
     </div>
+    </>
   );
 }

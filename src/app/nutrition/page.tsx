@@ -13,6 +13,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import Header from "@/components/Header";
 
 export default function NutritionAnalyzer() {
   const [query, setQuery] = useState("");
@@ -110,6 +111,8 @@ export default function NutritionAnalyzer() {
   };
 
   return (
+    <>
+    <Header />
     <motion.div
       className="min-h-screen w-full bg-gradient-to-br from-orange-700 via-amber-600 to-yellow-500 flex flex-col items-center px-6 py-10 text-white"
       initial={{ opacity: 0 }}
@@ -228,5 +231,6 @@ export default function NutritionAnalyzer() {
         </motion.div>
       )}
     </motion.div>
+    </>
   );
 }
