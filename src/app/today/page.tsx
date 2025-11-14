@@ -17,11 +17,13 @@ interface Meal {
   carbs: number;
   fat: number;
   time?: string;
+  timestamp?: string;
 }
 
 export default function DailyLog() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [newMeal, setNewMeal] = useState<Partial<Meal>>({
     type: "Breakfast",
     name: "",
@@ -30,83 +32,203 @@ export default function DailyLog() {
     carbs: 0,
     fat: 0,
   });
+  const [profile, setProfile] = useState<any>(null);
 
-  const user =
-    typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("user") || "{}")
-      : {};
-
-  // ✅ Fetch meals for today
+  // read user/profile safely (client-side)
   useEffect(() => {
-    if (user?.email) fetchMeals();
+    if (typeof window === "undefined") return;
+
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      setLoading(false);
+      return;
+    }
+
+    const parsedUser = JSON.parse(storedUser);
+    if (parsedUser?.email) {
+      fetchMeals(parsedUser.email);
+      // try to load profile (profile route stores daily info)
+      const profileRaw = localStorage.getItem("profile");
+      if (profileRaw) {
+        try {
+          setProfile(JSON.parse(profileRaw));
+        } catch {
+          setProfile(null);
+        }
+      } else {
+        // fetch profile from server as fallback
+        fetchProfile(parsedUser.email);
+      }
+    } else {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchMeals = async () => {
+  const fetchProfile = async (email: string) => {
     try {
-      const res = await axios.get(`/api/daily-log?email=${user.email}`);
-      setMeals(res.data);
+      const res = await axios.get(`/api/profile?email=${email}`);
+      if (res?.data) {
+        setProfile(res.data);
+        localStorage.setItem("profile", JSON.stringify(res.data));
+      }
     } catch (err) {
+      // non-fatal
+      console.warn("Could not load profile:", err);
+    }
+  };
+
+  const fetchMeals = async (email: string) => {
+    setLoading(true);
+    try {
+      const res = await axios.get(
+        `/api/daily-log?email=${encodeURIComponent(email)}`
+      );
+      // expect res.data to be array
+      setMeals(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error(err);
       toast.error("Unable to fetch meals 😔");
+      setMeals([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Add meal
+  // Add new meal
   const handleAddMeal = async () => {
-    if (!newMeal.name?.trim()) {
+    if (!newMeal.name || !newMeal.name.trim()) {
       toast.error("Please enter a meal name.");
       return;
     }
 
+    const storedUser =
+      typeof window !== "undefined" ? localStorage.getItem("user") : null;
+    if (!storedUser) {
+      toast.error("User not found. Please login again.");
+      return;
+    }
+    const { email } = JSON.parse(storedUser);
+
+    // sanitize numeric inputs
+    const mealToSave: Meal = {
+      type: (newMeal.type as Meal["type"]) || "Breakfast",
+      name: (newMeal.name || "").trim(),
+      calories: Number(newMeal.calories) || 0,
+      protein: Number(newMeal.protein) || 0,
+      carbs: Number(newMeal.carbs) || 0,
+      fat: Number(newMeal.fat) || 0,
+      timestamp: new Date().toISOString(),
+    };
+
     try {
-      await axios.post("/api/daily-log", {
-        email: user.email,
-        ...newMeal,
+      setSaving(true);
+
+      // optimistic UI: show new meal immediately with temporary _id
+      const tempId = "temp-" + Date.now();
+      setMeals((prev) => [{ ...mealToSave, _id: tempId }, ...prev]);
+
+      const res = await axios.post("/api/daily-log", {
+        email,
+        ...mealToSave,
       });
 
-      toast.success(`${newMeal.type} added successfully! 🍽️`);
-      setNewMeal({
-        type: "Breakfast",
-        name: "",
-        calories: 0,
-        protein: 0,
-        carbs: 0,
-        fat: 0,
-      });
-      fetchMeals();
-    } catch {
+      // replace temp entry with server returned item if available
+      // if server returns the created object (some APIs do) use it otherwise refetch
+      if (res.data && res.data.insertedId) {
+        // If API returns insertedId we can refetch or update id
+        await fetchMeals(email);
+      } else {
+        // fallback: refresh meals from server to ensure correct ids
+        await fetchMeals(email);
+      }
+
+      toast.success(`${mealToSave.type} added successfully! 🍽️`);
+      resetNewMeal();
+    } catch (err) {
+      console.error(err);
+      // revert optimistic add
+      setMeals((prev) =>
+        prev.filter((m) => !m._id?.toString().startsWith("temp-"))
+      );
       toast.error("Error adding meal 😕");
+    } finally {
+      setSaving(false);
     }
   };
 
-  // ✅ Delete meal
+  // Delete meal
   const handleDelete = async (id?: string) => {
     if (!id) return;
+    const storedUser =
+      typeof window !== "undefined" ? localStorage.getItem("user") : null;
+    if (!storedUser) {
+      toast.error("User not found.");
+      return;
+    }
+    const { email } = JSON.parse(storedUser);
+
+    // optimistic removal
+    const prev = meals;
+    setMeals((m) => m.filter((x) => x._id !== id));
+
     try {
-      await axios.delete(`/api/daily-log?id=${id}`);
+      await axios.delete(
+        `/api/daily-log?id=${encodeURIComponent(id)}&email=${encodeURIComponent(
+          email
+        )}`
+      );
       toast.success("Meal deleted successfully 🗑️");
-      fetchMeals();
-    } catch {
+    } catch (err) {
+      console.error(err);
+      setMeals(prev); // restore on failure
       toast.error("Error deleting meal.");
     }
   };
 
-  // ✅ Calculate total nutrition
+  const resetNewMeal = () => {
+    setNewMeal({
+      type: "Breakfast",
+      name: "",
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+    });
+  };
+
+  // totals & percentages
   const totals = meals.reduce(
     (acc, meal) => ({
-      calories: acc.calories + (meal.calories || 0),
-      protein: acc.protein + (meal.protein || 0),
-      carbs: acc.carbs + (meal.carbs || 0),
-      fat: acc.fat + (meal.fat || 0),
+      calories: acc.calories + (Number(meal.calories) || 0),
+      protein: acc.protein + (Number(meal.protein) || 0),
+      carbs: acc.carbs + (Number(meal.carbs) || 0),
+      fat: acc.fat + (Number(meal.fat) || 0),
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
 
+  const goalCalories = profile?.dailyCalories || 2000;
+  const caloriePercent = Math.min(
+    Math.round((totals.calories / goalCalories) * 100),
+    100
+  );
+
+  // helpers
+  const formatDateTime = (iso?: string) => {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } catch {
+      return "";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:to-gray-900 transition-all duration-500">
       <div className="max-w-4xl mx-auto p-6 space-y-8">
-        {/* ✅ Page Title */}
+        {/* Page Title */}
         <header className="text-center space-y-2">
           <h1 className="text-4xl font-bold text-orange-700 dark:text-orange-400">
             🍽️ Daily Meal Log
@@ -116,7 +238,7 @@ export default function DailyLog() {
           </p>
         </header>
 
-        {/* ✅ Add Meal Form */}
+        {/* Add Meal Form */}
         <Card className="p-4 border border-orange-200 dark:border-orange-800 shadow-md">
           <h2 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">
             Add a Meal
@@ -141,50 +263,62 @@ export default function DailyLog() {
               placeholder="Meal name"
               value={newMeal.name}
               onChange={(e) => setNewMeal({ ...newMeal, name: e.target.value })}
+              aria-label="Meal name"
             />
             <Input
               placeholder="Calories"
               type="number"
-              value={newMeal.calories}
+              value={newMeal.calories ?? ""}
               onChange={(e) =>
-                setNewMeal({ ...newMeal, calories: parseFloat(e.target.value) })
+                setNewMeal({ ...newMeal, calories: Number(e.target.value) })
               }
+              aria-label="Calories"
             />
             <Input
               placeholder="Protein (g)"
               type="number"
-              value={newMeal.protein}
+              value={newMeal.protein ?? ""}
               onChange={(e) =>
-                setNewMeal({ ...newMeal, protein: parseFloat(e.target.value) })
+                setNewMeal({ ...newMeal, protein: Number(e.target.value) })
               }
+              aria-label="Protein in grams"
             />
             <Input
               placeholder="Carbs (g)"
               type="number"
-              value={newMeal.carbs}
+              value={newMeal.carbs ?? ""}
               onChange={(e) =>
-                setNewMeal({ ...newMeal, carbs: parseFloat(e.target.value) })
+                setNewMeal({ ...newMeal, carbs: Number(e.target.value) })
               }
+              aria-label="Carbs in grams"
             />
             <Input
               placeholder="Fats (g)"
               type="number"
-              value={newMeal.fat}
+              value={newMeal.fat ?? ""}
               onChange={(e) =>
-                setNewMeal({ ...newMeal, fat: parseFloat(e.target.value) })
+                setNewMeal({ ...newMeal, fat: Number(e.target.value) })
               }
+              aria-label="Fats in grams"
             />
           </div>
 
           <Button
             onClick={handleAddMeal}
             className="mt-4 w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600"
+            disabled={saving}
+            aria-busy={saving}
           >
-            <Plus className="w-4 h-4 mr-2" /> Add Meal
+            {saving ? (
+              <Loader2 className="animate-spin w-4 h-4 mr-2" />
+            ) : (
+              <Plus className="w-4 h-4 mr-2" />
+            )}{" "}
+            Add Meal
           </Button>
         </Card>
 
-        {/* ✅ Loading State */}
+        {/* Loading / Empty / Content */}
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="animate-spin h-8 w-8 text-orange-600 dark:text-orange-400" />
@@ -195,18 +329,33 @@ export default function DailyLog() {
           </Card>
         ) : (
           <>
-            {/* ✅ Daily Summary */}
+            {/* Daily Summary */}
             <Card className="border border-orange-200 dark:border-orange-800 p-6 shadow-sm">
               <h2 className="text-xl font-semibold mb-2 text-orange-700 dark:text-orange-400">
                 📊 Daily Summary
               </h2>
-              <p>🔥 Calories: {totals.calories} kcal</p>
+              <p>
+                🔥 Calories: {totals.calories} kcal{" "}
+                {profile?.dailyCalories ? (
+                  <span className="text-sm text-gray-500">
+                    ({caloriePercent}% of {profile.dailyCalories})
+                  </span>
+                ) : null}
+              </p>
               <p>💪 Protein: {totals.protein} g</p>
               <p>🍞 Carbs: {totals.carbs} g</p>
               <p>🥑 Fats: {totals.fat} g</p>
+              {profile?.dailyCalories && (
+                <div className="w-full h-3 bg-gray-200 rounded-full mt-3 overflow-hidden">
+                  <div
+                    className="h-full bg-orange-500 transition-all"
+                    style={{ width: `${caloriePercent}%` }}
+                  />
+                </div>
+              )}
             </Card>
 
-            {/* ✅ Meal List */}
+            {/* Meal List */}
             <div className="grid md:grid-cols-2 gap-6 mt-6">
               {meals.map((meal) => (
                 <Card
@@ -223,15 +372,22 @@ export default function DailyLog() {
                           🔥 {meal.calories} kcal | 💪 {meal.protein}g | 🍞{" "}
                           {meal.carbs}g | 🥑 {meal.fat}g
                         </p>
+                        {meal.timestamp && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            Logged at: {formatDateTime(meal.timestamp)}
+                          </p>
+                        )}
                       </div>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(meal._id)}
-                        aria-label={`Delete ${meal.name}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(meal._id)}
+                          aria-label={`Delete ${meal.name}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

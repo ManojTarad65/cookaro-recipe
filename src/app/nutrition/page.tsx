@@ -38,6 +38,7 @@ export default function NutritionAnalyzer() {
 
       if (data) {
         const { age, gender, height, weight, activityLevel } = data;
+
         const heightM = height / 100;
         const bmr =
           gender === "male"
@@ -66,15 +67,30 @@ export default function NutritionAnalyzer() {
       return;
     }
 
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user.email) {
+      setError("Please login to analyze nutrition.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setNutrition(null);
 
     try {
-      const res = await axios.post("/api/nutrition", { query });
-      setNutrition(res.data);
+      const res = await axios.post("/api/nutrition", {
+        query,
+        email: user.email,
+      });
+
+      if (res.data?.nutrition) {
+        setNutrition(res.data.nutrition);
+      } else {
+        setError("Unable to analyze this food right now 😕");
+      }
     } catch (err) {
       setError("Unable to analyze this food right now 😕");
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -170,7 +186,6 @@ export default function NutritionAnalyzer() {
             Nutrition Breakdown 🧩
           </h2>
 
-          {/* Data */}
           <div className="grid grid-cols-2 gap-4 text-lg mb-6 text-white/90">
             <p>
               🔥 Calories:{" "}
@@ -198,7 +213,6 @@ export default function NutritionAnalyzer() {
             </p>
           </div>
 
-          {/* Chart */}
           <div className="w-full h-64">
             <ResponsiveContainer>
               <PieChart>
@@ -230,7 +244,6 @@ export default function NutritionAnalyzer() {
             </ResponsiveContainer>
           </div>
 
-          {/* Smart Insight */}
           {comparison && (
             <div className="mt-6 text-center">
               <p className="text-green-300 font-medium">
@@ -248,7 +261,6 @@ export default function NutritionAnalyzer() {
             </div>
           )}
 
-          {/* AI Tip Section */}
           <motion.div
             className="mt-10 p-4 bg-green-900/30 rounded-xl border border-green-600/50 flex gap-3 items-start text-left"
             initial={{ opacity: 0 }}
@@ -264,7 +276,6 @@ export default function NutritionAnalyzer() {
         </motion.div>
       )}
 
-      {/* No Data Yet */}
       {!nutrition && !loading && !error && (
         <motion.p
           className="text-white/80 mt-12 text-center text-lg max-w-lg leading-relaxed"

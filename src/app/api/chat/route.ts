@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { message } = await req.json();
+    const { message, userProfile } = await req.json();
 
     if (!message) {
       return NextResponse.json(
@@ -20,8 +20,35 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Correct endpoint for Gemini 2.5 Flash model
+    // Gemini endpoint
     const GEMINI_URL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+    // 🧠 Build a personalized system prompt using user profile
+    const profileText = userProfile
+      ? `
+User Profile:
+- Age: ${userProfile.age || "Not provided"}
+- Gender: ${userProfile.gender || "Not provided"}
+- Height: ${userProfile.height || "Not provided"} cm
+- Weight: ${userProfile.weight || "Not provided"} kg
+- Activity Level: ${userProfile.activityLevel || "Not provided"}
+- Daily Calories Goal: ${userProfile.dailyCalories || "Unknown"}
+`
+      : "User profile is missing.";
+
+    const SYSTEM_PROMPT = `
+You are **EatoAI**, a friendly AI nutrition expert.
+
+Your job:
+- Give clear, helpful answers about food, recipes, calories, dieting, fitness & nutrition.
+- Use simple English.
+- Give direct guidance.
+- If the user asks for a meal idea, give 2–4 suggestions.
+- If the user asks for nutrition advice, include calories/protein if possible.
+
+Here is the user's profile. Use it to personalize advice:
+${profileText}
+`;
 
     const response = await fetch(GEMINI_URL, {
       method: "POST",
@@ -29,13 +56,8 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         contents: [
           {
-            parts: [
-              {
-                text: `You are EatoAI, a friendly AI health assistant. 
-Answer the user clearly and helpfully about food, fitness, or health.
-User message: ${message}`,
-              },
-            ],
+            role: "user",
+            parts: [{ text: SYSTEM_PROMPT + "\nUser: " + message }],
           },
         ],
       }),
@@ -44,7 +66,7 @@ User message: ${message}`,
     const data = await response.json();
 
     if (data.error) {
-      console.error("⚠️ Gemini API Error:", data.error);
+      console.error("⚠️ Gemini Error:", data.error);
       return NextResponse.json({
         reply: `⚠️ Gemini API Error: ${data.error.message}`,
       });

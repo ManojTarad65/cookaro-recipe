@@ -2,59 +2,105 @@ import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-// GET — fetch meals for today
+const DB_NAME = "cookaro"; // ✅ keep same DB everywhere
+const COLLECTION = "dailyLogs";
+
+// ================================
+// GET — Fetch meals for TODAY
+// ================================
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const email = searchParams.get("email");
+  try {
+    const { searchParams } = new URL(request.url);
+    const email = searchParams.get("email");
 
-  if (!email) {
-    return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    if (!email) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
+
+    const client = await clientPromise;
+    const db = client.db(DB_NAME);
+
+    // Start of today
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const meals = await db
+      .collection(COLLECTION)
+      .find({
+        email,
+        date: { $gte: startOfToday },
+      })
+      .sort({ timestamp: -1 }) // newest first
+      .toArray();
+
+    return NextResponse.json(meals, { status: 200 });
+  } catch (err) {
+    console.error("❌ GET daily-log error:", err);
+    return NextResponse.json(
+      { error: "Failed to load daily logs" },
+      { status: 500 }
+    );
   }
-
-  const client = await clientPromise;
-  const db = client.db("eatoai");
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const meals = await db
-    .collection("dailyLogs")
-    .find({
-      email,
-      date: { $gte: today },
-    })
-    .sort({ time: 1 })
-    .toArray();
-
-  return NextResponse.json(meals);
 }
 
-// POST — add new meal
+// ================================
+// POST — Add a new meal entry
+// ================================
 export async function POST(req: Request) {
-  const body = await req.json();
-  const client = await clientPromise;
-  const db = client.db("eatoai");
+  try {
+    const body = await req.json();
 
-  await db.collection("dailyLogs").insertOne({
-    ...body,
-    date: new Date(),
-    createdAt: new Date(),
-  });
+    const { email, name, type } = body;
 
-  return NextResponse.json({ success: true });
+    if (!email || !name || !type) {
+      return NextResponse.json(
+        { error: "email, name, and type are required" },
+        { status: 400 }
+      );
+    }
+
+    const client = await clientPromise;
+    const db = client.db(DB_NAME);
+
+    const entry = {
+      ...body,
+      date: new Date(), // for filtering by day
+      timestamp: new Date().toISOString(), // for UI
+      createdAt: new Date(),
+    };
+
+    await db.collection(COLLECTION).insertOne(entry);
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (err) {
+    console.error("❌ POST daily-log error:", err);
+    return NextResponse.json({ error: "Failed to add meal" }, { status: 500 });
+  }
 }
 
-// DELETE — remove meal
+// ================================
+// DELETE — Remove ONE meal
+// ================================
 export async function DELETE(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
 
-  if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: "ID required" }, { status: 400 });
+    }
 
-  const client = await clientPromise;
-  const db = client.db("eatoai");
+    const client = await clientPromise;
+    const db = client.db(DB_NAME);
 
-  await db.collection("dailyLogs").deleteOne({ _id: new ObjectId(id) });
+    await db.collection(COLLECTION).deleteOne({ _id: new ObjectId(id) });
 
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (err) {
+    console.error("❌ DELETE daily-log error:", err);
+    return NextResponse.json(
+      { error: "Failed to delete meal" },
+      { status: 500 }
+    );
+  }
 }
