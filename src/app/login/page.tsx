@@ -5,7 +5,6 @@ import { useSession, signIn } from "next-auth/react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
 
 const Particles = dynamic(() => import("react-tsparticles"), { ssr: false });
 
@@ -13,16 +12,17 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // ✅ Auto-redirect after login
+  // Auto redirect after login
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/");
+      router.replace("/today");
     }
   }, [status, router]);
 
+  // FIXED PARTICLES INIT
   const particlesInit = async (engine: any) => {
-    const mod = await import("tsparticles");
-    if (mod?.loadFull) await mod.loadFull(engine);
+    const { loadSlim } = await import("tsparticles-slim");
+    await loadSlim(engine);
   };
 
   const particlesOptions = {
@@ -34,10 +34,9 @@ export default function LoginPage() {
     },
   };
 
-  // ⏳ Still loading session → show nothing
   if (status === "loading") return null;
 
-  // 🔥 Not logged in → Show Login Page
+  // SHOW LOGIN PAGE if NOT LOGGED IN
   if (!session)
     return (
       <div className="flex flex-col items-center justify-center h-screen relative bg-gradient-to-br from-black via-zinc-900 to-black text-white">
@@ -53,6 +52,8 @@ export default function LoginPage() {
 
         <motion.button
           onClick={() => signIn("google")}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
           className="flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-2xl text-white mt-4"
         >
           <img
@@ -68,7 +69,7 @@ export default function LoginPage() {
       </div>
     );
 
-  // 😊 Welcome Screen (Visible only for ~0.5 sec)
+  // TEMP WELCOME (won't be visible long)
   return (
     <div className="flex items-center justify-center h-screen bg-gradient-to-br from-orange-600 to-yellow-500 text-white">
       <h1 className="text-3xl font-semibold">Welcome back!</h1>

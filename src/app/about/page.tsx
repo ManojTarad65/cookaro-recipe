@@ -8,8 +8,21 @@ import { ChefHat, Sparkles, History, Target, Lightbulb } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const About = () => {
+
+   const { data: session } = useSession();
+  const router = useRouter();
+
+  const handleCTA = () => {
+    if (session) {
+      router.push("/recipe"); // user logged in
+    } else {
+      router.push("/login"); // user not logged in
+    }
+  }
   // ✅ Memoized values to prevent re-renders
   const values = useMemo(
     () => [
@@ -223,15 +236,14 @@ const About = () => {
           <p className="text-xl mb-8 opacity-90">
             Join our community and start creating amazing recipes with AI today.
           </p>
-          <Link href="/recipe">
-            <Button
-              size="lg"
-              variant="secondary"
-              className="text-lg px-8 py-3 hover:scale-105 transition-all cursor-pointer"
-            >
-              Try EatoAI Now
-            </Button>
-          </Link>
+          <Button
+            size="lg"
+            variant="secondary"
+            onClick={handleCTA}
+            className="text-lg px-8 py-3 hover:scale-105 transition-all cursor-pointer"
+          >
+            Try EatoAI Now
+          </Button>
         </div>
       </motion.section>
     </div>

@@ -228,178 +228,193 @@ export default function DailyLog() {
 
   return (
     <>
-    <Header />
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:to-gray-900 transition-all duration-500">
-      <div className="max-w-4xl mx-auto p-6 space-y-8">
-        {/* Page Title */}
-        <header className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-orange-700 dark:text-orange-400">
-            🍽️ Daily Meal Log
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
-            Track your meals, calories, and macros for a healthier you!
-          </p>
-        </header>
+      <Header />
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-950 dark:to-gray-900 transition-all duration-500">
+        <div className="max-w-4xl mx-auto p-6 space-y-8">
+          {/* Page Title */}
+          <header className="text-center space-y-2">
+            <h1 className="text-4xl font-bold text-orange-700 dark:text-orange-400">
+              🍽️ Daily Meal Log
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Track your meals, calories, and macros for a healthier you!
+            </p>
+          </header>
 
-        {/* Add Meal Form */}
-        <Card className="p-4 border border-orange-200 dark:border-orange-800 shadow-md">
-          <h2 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">
-            Add a Meal
-          </h2>
+          {/* Add Meal Form */}
+          <Card className="p-4 border border-orange-200 dark:border-orange-800 shadow-md">
+            <h2 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">
+              Add a Meal
+            </h2>
 
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
-            <select
-              value={newMeal.type}
-              onChange={(e) =>
-                setNewMeal({ ...newMeal, type: e.target.value as Meal["type"] })
-              }
-              className="border rounded-md p-2 dark:bg-gray-800 dark:text-white"
-              aria-label="Meal Type"
-            >
-              <option>Breakfast</option>
-              <option>Lunch</option>
-              <option>Snacks</option>
-              <option>Dinner</option>
-            </select>
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {/* MEAL TYPE */}
+              <select
+                value={newMeal.type}
+                onChange={(e) =>
+                  setNewMeal({
+                    ...newMeal,
+                    type: e.target.value as Meal["type"],
+                  })
+                }
+                className="border rounded-md p-2 dark:bg-gray-800 dark:text-white"
+                aria-label="Meal Type"
+              >
+                <option>Breakfast</option>
+                <option>Lunch</option>
+                <option>Snacks</option>
+                <option>Dinner</option>
+              </select>
 
-            <Input
-              placeholder="Meal name"
-              value={newMeal.name}
-              onChange={(e) => setNewMeal({ ...newMeal, name: e.target.value })}
-              aria-label="Meal name"
-            />
-            <Input
-              placeholder="Calories"
-              type="number"
-              value={newMeal.calories ?? ""}
-              onChange={(e) =>
-                setNewMeal({ ...newMeal, calories: Number(e.target.value) })
-              }
-              aria-label="Calories"
-            />
-            <Input
-              placeholder="Protein (g)"
-              type="number"
-              value={newMeal.protein ?? ""}
-              onChange={(e) =>
-                setNewMeal({ ...newMeal, protein: Number(e.target.value) })
-              }
-              aria-label="Protein in grams"
-            />
-            <Input
-              placeholder="Carbs (g)"
-              type="number"
-              value={newMeal.carbs ?? ""}
-              onChange={(e) =>
-                setNewMeal({ ...newMeal, carbs: Number(e.target.value) })
-              }
-              aria-label="Carbs in grams"
-            />
-            <Input
-              placeholder="Fats (g)"
-              type="number"
-              value={newMeal.fat ?? ""}
-              onChange={(e) =>
-                setNewMeal({ ...newMeal, fat: Number(e.target.value) })
-              }
-              aria-label="Fats in grams"
-            />
-          </div>
+              {/* MEAL NAME */}
+              <Input
+                placeholder="Meal name"
+                value={newMeal.name}
+                onChange={(e) =>
+                  setNewMeal({ ...newMeal, name: e.target.value })
+                }
+                aria-label="Meal name"
+              />
 
-          <Button
-            onClick={handleAddMeal}
-            className="mt-4 w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600"
-            disabled={saving}
-            aria-busy={saving}
-          >
-            {saving ? (
-              <Loader2 className="animate-spin w-4 h-4 mr-2" />
-            ) : (
-              <Plus className="w-4 h-4 mr-2" />
-            )}{" "}
-            Add Meal
-          </Button>
-        </Card>
+              {/* CALORIES */}
+              <Input
+                placeholder="Calories"
+                type="number"
+                value={newMeal.calories === 0 ? "" : newMeal.calories}
+                onChange={(e) =>
+                  setNewMeal({ ...newMeal, calories: Number(e.target.value) })
+                }
+                aria-label="Calories"
+              />
 
-        {/* Loading / Empty / Content */}
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="animate-spin h-8 w-8 text-orange-600 dark:text-orange-400" />
-          </div>
-        ) : meals.length === 0 ? (
-          <Card className="p-6 text-center text-gray-500 dark:text-gray-400 border border-orange-100 dark:border-orange-800">
-            <p>No meals logged yet. Start by adding one above! 🥗</p>
-          </Card>
-        ) : (
-          <>
-            {/* Daily Summary */}
-            <Card className="border border-orange-200 dark:border-orange-800 p-6 shadow-sm">
-              <h2 className="text-xl font-semibold mb-2 text-orange-700 dark:text-orange-400">
-                📊 Daily Summary
-              </h2>
-              <p>
-                🔥 Calories: {totals.calories} kcal{" "}
-                {profile?.dailyCalories ? (
-                  <span className="text-sm text-gray-500">
-                    ({caloriePercent}% of {profile.dailyCalories})
-                  </span>
-                ) : null}
-              </p>
-              <p>💪 Protein: {totals.protein} g</p>
-              <p>🍞 Carbs: {totals.carbs} g</p>
-              <p>🥑 Fats: {totals.fat} g</p>
-              {profile?.dailyCalories && (
-                <div className="w-full h-3 bg-gray-200 rounded-full mt-3 overflow-hidden">
-                  <div
-                    className="h-full bg-orange-500 transition-all"
-                    style={{ width: `${caloriePercent}%` }}
-                  />
-                </div>
-              )}
-            </Card>
+              {/* PROTEIN */}
+              <Input
+                placeholder="Protein (g)"
+                type="number"
+                value={newMeal.protein === 0 ? "" : newMeal.protein}
+                onChange={(e) =>
+                  setNewMeal({ ...newMeal, protein: Number(e.target.value) })
+                }
+                aria-label="Protein in grams"
+              />
 
-            {/* Meal List */}
-            <div className="grid md:grid-cols-2 gap-6 mt-6">
-              {meals.map((meal) => (
-                <Card
-                  key={meal._id}
-                  className="border border-orange-100 dark:border-orange-800 shadow-md hover:shadow-lg transition"
-                >
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold text-gray-800 dark:text-gray-100">
-                          {meal.type}: {meal.name}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          🔥 {meal.calories} kcal | 💪 {meal.protein}g | 🍞{" "}
-                          {meal.carbs}g | 🥑 {meal.fat}g
-                        </p>
-                        {meal.timestamp && (
-                          <p className="text-xs text-gray-400 mt-1">
-                            Logged at: {formatDateTime(meal.timestamp)}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDelete(meal._id)}
-                          aria-label={`Delete ${meal.name}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {/* CARBS */}
+              <Input
+                placeholder="Carbs (g)"
+                type="number"
+                value={newMeal.carbs === 0 ? "" : newMeal.carbs}
+                onChange={(e) =>
+                  setNewMeal({ ...newMeal, carbs: Number(e.target.value) })
+                }
+                aria-label="Carbs in grams"
+              />
+
+              {/* FATS */}
+              <Input
+                placeholder="Fats (g)"
+                type="number"
+                value={newMeal.fat === 0 ? "" : newMeal.fat}
+                onChange={(e) =>
+                  setNewMeal({ ...newMeal, fat: Number(e.target.value) })
+                }
+                aria-label="Fats in grams"
+              />
             </div>
-          </>
-        )}
+
+            <Button
+              onClick={handleAddMeal}
+              className="mt-4 w-full bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600"
+              disabled={saving}
+              aria-busy={saving}
+            >
+              {saving ? (
+                <Loader2 className="animate-spin w-4 h-4 mr-2" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}{" "}
+              Add Meal
+            </Button>
+          </Card>
+
+          {/* Loading / Empty / Content */}
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="animate-spin h-8 w-8 text-orange-600 dark:text-orange-400" />
+            </div>
+          ) : meals.length === 0 ? (
+            <Card className="p-6 text-center text-gray-500 dark:text-gray-400 border border-orange-100 dark:border-orange-800">
+              <p>No meals logged yet. Start by adding one above! 🥗</p>
+            </Card>
+          ) : (
+            <>
+              {/* Daily Summary */}
+              <Card className="border border-orange-200 dark:border-orange-800 p-6 shadow-sm">
+                <h2 className="text-xl font-semibold mb-2 text-orange-700 dark:text-orange-400">
+                  📊 Daily Summary
+                </h2>
+                <p>
+                  🔥 Calories: {totals.calories} kcal{" "}
+                  {profile?.dailyCalories ? (
+                    <span className="text-sm text-gray-500">
+                      ({caloriePercent}% of {profile.dailyCalories})
+                    </span>
+                  ) : null}
+                </p>
+                <p>💪 Protein: {totals.protein} g</p>
+                <p>🍞 Carbs: {totals.carbs} g</p>
+                <p>🥑 Fats: {totals.fat} g</p>
+                {profile?.dailyCalories && (
+                  <div className="w-full h-3 bg-gray-200 rounded-full mt-3 overflow-hidden">
+                    <div
+                      className="h-full bg-orange-500 transition-all"
+                      style={{ width: `${caloriePercent}%` }}
+                    />
+                  </div>
+                )}
+              </Card>
+
+              {/* Meal List */}
+              <div className="grid md:grid-cols-2 gap-6 mt-6">
+                {meals.map((meal) => (
+                  <Card
+                    key={meal._id}
+                    className="border border-orange-100 dark:border-orange-800 shadow-md hover:shadow-lg transition"
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+                            {meal.type}: {meal.name}
+                          </h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            🔥 {meal.calories} kcal | 💪 {meal.protein}g | 🍞{" "}
+                            {meal.carbs}g | 🥑 {meal.fat}g
+                          </p>
+                          {meal.timestamp && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              Logged at: {formatDateTime(meal.timestamp)}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDelete(meal._id)}
+                            aria-label={`Delete ${meal.name}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
     </>
   );
 }
