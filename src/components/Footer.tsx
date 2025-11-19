@@ -51,7 +51,7 @@ const Footer = () => {
             aria-label="GitHub profile"
           >
             <RiGithubLine
-              className="h-6 w-6 sm:h-7 sm:w-7 text-orange-100 hover:text-orange-400"
+              className="h-6 w-6 sm:h-7 sm:w-7 text-orange-100 hover:text-orange-400 cursor-pointer"
               aria-hidden="true"
             />
           </a>

@@ -165,7 +165,7 @@ export default function ContactClient() {
               </label>
               <Input
                 name="email"
-                placeholder="you@example.com"
+                placeholder="Enter your email"
                 value={form.email}
                 onChange={handleChange}
                 className="bg-gray-900/60 text-white border-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-orange-400"
