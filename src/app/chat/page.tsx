@@ -9,17 +9,21 @@ import Header from "@/components/Header";
 
 
 // ✅ Helper function for formatting text
+// ✅ Helper function for formatting text
 function formatText(text: string) {
   if (!text) return "";
   return text
-    .replace(/\*\*(.*?)\*\*/g, "<strong class='text-orange-600'>$1</strong>")
-    .replace(
-      /### (.*?)(\n|$)/g,
-      "<h3 class='text-lg font-semibold mt-2'>$1</h3>"
-    )
-    .replace(/\* (.*?)(\n|$)/g, "• $1<br>")
-    .replace(/---/g, "<hr class='my-2 border-gray-300' />")
+    // Headers (### Header)
+    .replace(/### (.*?)(\n|$)/g, "<h3 class='text-lg font-bold text-orange-700 mt-4 mb-2'>$1</h3>")
+    // Bold (**text**)
+    .replace(/\*\*(.*?)\*\*/g, "<strong class='font-bold text-gray-900'>$1</strong>")
+    // Bullet points (* item)
+    .replace(/^\* (.*?)(\n|$)/gm, "<li class='ml-4 list-disc text-gray-700'>$1</li>")
+    // Numbered lists (1. item)
+    .replace(/^\d+\. (.*?)(\n|$)/gm, "<li class='ml-4 list-decimal text-gray-700 mb-1'>$1</li>")
+    // Line breaks
     .replace(/\n/g, "<br>")
+    // Cleanup
     .replace(/```[\s\S]*?```/g, "")
     .trim();
 }
@@ -81,7 +85,7 @@ export default function ChatPage() {
 
   return (
     <>
-    <Header />
+      <Header />
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-orange-50 to-amber-50">
         <div className="max-w-3xl w-full mx-auto flex flex-col flex-1 p-4 pb-24">
           <h1 className="text-3xl font-bold text-center text-orange-700 mb-4">
@@ -96,19 +100,17 @@ export default function ChatPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                className={`flex items-start gap-3 ${
-                  msg.role === "user" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex items-start gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"
+                  }`}
               >
                 {msg.role === "bot" && (
                   <Bot className="w-6 h-6 text-orange-600 shrink-0" />
                 )}
                 <div
-                  className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-                    msg.role === "user"
+                  className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.role === "user"
                       ? "bg-orange-600 text-white rounded-br-none"
                       : "bg-gray-100 text-gray-900 rounded-bl-none"
-                  }`}
+                    }`}
                   dangerouslySetInnerHTML={{ __html: formatText(msg.text) }}
                 ></div>
                 {msg.role === "user" && (
