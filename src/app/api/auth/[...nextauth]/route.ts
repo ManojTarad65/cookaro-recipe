@@ -1,10 +1,7 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { MongoDBAdapter } from "@next-auth/mongodb-adapter";
-import clientPromise from "@/lib/mongodb";
 
 export const authOptions: NextAuthOptions = {
-  adapter: MongoDBAdapter(clientPromise),
 
   providers: [
     GoogleProvider({
@@ -20,7 +17,7 @@ export const authOptions: NextAuthOptions = {
       if (account && profile) {
         token.email = profile.email;
         token.name = profile.name;
-        token.picture = profile.picture;
+        token.picture = (profile as any).picture;
       }
       return token;
     },

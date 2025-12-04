@@ -20,17 +20,32 @@ export async function POST(req: Request) {
     }
 
     // ⭐ Call Nutritionix API
-    const response = await axios.post(
-      "https://trackapi.nutritionix.com/v2/natural/nutrients",
-      { query },
-      {
-        headers: {
-          "x-app-id": process.env.NUTRITIONIX_APP_ID,
-          "x-app-key": process.env.NUTRITIONIX_APP_KEY,
-          "Content-Type": "application/json",
-        },
+    let response;
+    try {
+      response = await axios.post(
+        "https://trackapi.nutritionix.com/v2/natural/nutrients",
+        { query },
+        {
+          headers: {
+            "x-app-id": process.env.NUTRITIONIX_APP_ID,
+            "x-app-key": process.env.NUTRITIONIX_APP_KEY,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    } catch (apiError: any) {
+      if (apiError.response?.status === 401 || apiError.response?.status === 403) {
+        console.warn("⚠️ Nutritionix API Unauthorized. Using MOCK data.");
+        return NextResponse.json({
+          calories: 350,
+          protein: 25,
+          fat: 12,
+          carbs: 40,
+          mock: true
+        }, { status: 200 });
       }
-    );
+      throw apiError;
+    }
 
     const foods = response?.data?.foods;
 

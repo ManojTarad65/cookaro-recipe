@@ -20,21 +20,14 @@ import {
 import { toast } from "sonner";
 import Header from "./Header";
 
+import { useSession } from "next-auth/react";
+
 const Hero = () => {
-  const [user, setUser] = useState<any>(null);
+  const { data: session } = useSession();
   const [liveUsers, setLiveUsers] = useState(2500); // starting user count
   const router = useRouter();
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch {
-        setUser(null);
-      }
-    }
-
     // Simulate live counter increment (clean up properly)
     const interval = setInterval(() => {
       setLiveUsers((prev) => prev + Math.floor(Math.random() * 3));
@@ -44,13 +37,13 @@ const Hero = () => {
   }, []);
 
   const handleStartCooking = useCallback(() => {
-    if (!user) {
+    if (!session) {
       toast.error("Please login to start cooking!");
       router.push("/login");
       return;
     }
     router.push("/recipe");
-  }, [user, router]);
+  }, [session, router]);
 
   const features = useMemo(
     () => [

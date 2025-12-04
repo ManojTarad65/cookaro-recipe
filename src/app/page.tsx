@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import LoadingScreen from "@/components/LoadingScreen";
 import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
+import Header from "@/components/Header";
 
 
 export default function Home() {
@@ -46,6 +47,7 @@ function MainWrapper() {
   return (
     <main className="flex flex-col min-h-screen">
 
+      <Header />
       <Hero />
       <Footer />
     </main>

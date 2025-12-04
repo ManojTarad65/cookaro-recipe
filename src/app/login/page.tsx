@@ -15,7 +15,7 @@ export default function LoginPage() {
   // Auto redirect after login
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/today");
+      router.replace("/recipe");
     }
   }, [status, router]);
 
